@@ -1,0 +1,1597 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>히라가나 학습</title>
+  <link rel="manifest" href="./manifest.json">
+  <meta name="theme-color" content="#2563eb">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="ひらがな">
+  <style>
+    :root {
+      --bg: #f8f8f6; --surface: #fff; --border: #e5e5e0;
+      --text: #1a1a1a; --text-sub: #6b6b6b; --text-muted: #a0a0a0;
+      --accent: #2563eb; --accent-bg: #eff6ff;
+      --success: #16a34a; --success-bg: #f0fdf4;
+      --danger: #dc2626; --danger-bg: #fef2f2;
+      --radius: 12px; --radius-sm: 8px;
+    }
+    * { box-sizing: border-box; }
+    body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; margin: 0; -webkit-tap-highlight-color: transparent; }
+    .jp { font-family: 'Hiragino Sans', 'Yu Gothic', 'Noto Sans JP', sans-serif; }
+    #app { max-width: 480px; margin: 0 auto; min-height: 100vh; }
+
+    .btn { display: block; width: 100%; padding: 14px; font-size: 16px; font-weight: 600; border: none; border-radius: var(--radius); cursor: pointer; -webkit-appearance: none; min-height: 44px; }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:disabled { background: var(--text-muted); cursor: not-allowed; }
+    .btn-secondary { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+    .btn-danger { background: var(--danger-bg); color: var(--danger); border: 1px solid var(--danger); }
+
+    .header { display: flex; align-items: center; padding: 12px 16px; background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 10; }
+    .header-title { flex: 1; text-align: center; font-size: 17px; font-weight: 600; }
+    .back-btn { background: none; border: none; font-size: 24px; cursor: pointer; padding: 4px 8px; min-width: 44px; min-height: 44px; display: flex; align-items: center; justify-content: center; color: var(--accent); }
+    .header-spacer { min-width: 44px; }
+
+    /* ── 홈 ── */
+    .home-body { padding: 16px; }
+    .level-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+    .level-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; cursor: pointer; transition: border-color 0.15s; position: relative; overflow: hidden; }
+    .level-card.locked { opacity: 0.5; cursor: default; }
+    .level-card.unlocked:active { border-color: var(--accent); }
+    .level-card .lv-num { font-size: 11px; color: var(--text-muted); font-weight: 600; }
+    .level-card .lv-rep { font-size: 40px; line-height: 1.1; margin: 2px 0; }
+    .level-card .lv-name { font-size: 13px; color: var(--text-sub); font-weight: 500; }
+    .level-card .lv-badges { display: flex; gap: 4px; margin-top: 8px; flex-wrap: wrap; }
+    .lock-icon { position: absolute; top: 10px; right: 10px; font-size: 16px; opacity: 0.4; }
+    .badge { font-size: 10px; padding: 2px 6px; border-radius: 999px; font-weight: 600; }
+    .badge-done { background: var(--success-bg); color: var(--success); }
+    .badge-partial { background: var(--accent-bg); color: var(--accent); }
+    .badge-none { background: var(--bg); color: var(--text-muted); border: 1px solid var(--border); }
+    .home-actions { display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px; }
+
+    /* ── 레벨 상세 ── */
+    .lv-detail { padding: 16px; }
+    .char-grid { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin: 16px 0; }
+    .char-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 16px; text-align: center; min-width: 60px; }
+    .char-card .jp-char { font-size: 32px; line-height: 1.1; }
+    .char-card .ro-char { font-size: 12px; color: var(--text-sub); margin-top: 4px; }
+    .skill-buttons { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
+    .skill-row { display: flex; align-items: center; gap: 10px; }
+    .skill-btn { flex: 1; padding: 14px; font-size: 16px; font-weight: 600; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); cursor: pointer; -webkit-appearance: none; min-height: 44px; text-align: left; }
+    .skill-score { font-size: 13px; color: var(--text-muted); min-width: 44px; text-align: right; }
+    .skill-score.good { color: var(--success); font-weight: 600; }
+
+    /* ── 믹스/단어 선택 ── */
+    .select-body { padding: 16px; }
+    .select-desc { font-size: 14px; color: var(--text-sub); margin: 0 0 16px; line-height: 1.5; }
+    .section-label { font-size: 13px; font-weight: 700; color: var(--text-sub); text-transform: uppercase; letter-spacing: 0.5px; margin: 16px 0 8px; }
+    .check-actions { display: flex; gap: 8px; margin-bottom: 10px; }
+    .check-actions button { flex: 1; padding: 8px; font-size: 13px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); cursor: pointer; min-height: 36px; }
+    .check-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
+    .check-item { display: flex; align-items: center; gap: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px; cursor: pointer; transition: border-color 0.1s; user-select: none; }
+    .check-item.selected { border-color: var(--accent); background: var(--accent-bg); }
+    .check-item input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--accent); flex-shrink: 0; }
+    .check-item-label { flex: 1; font-size: 15px; font-weight: 500; }
+    .check-item-chars { font-size: 18px; }
+    .skill-tabs { display: flex; gap: 6px; margin-bottom: 16px; }
+    .skill-tab { flex: 1; padding: 10px 4px; font-size: 13px; font-weight: 600; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); cursor: pointer; min-height: 44px; -webkit-appearance: none; }
+    .skill-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .count-row { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+    .count-row input[type=range] { flex: 1; accent-color: var(--accent); }
+    .count-label { font-size: 15px; font-weight: 700; color: var(--accent); min-width: 52px; text-align: right; }
+
+    /* ── 퀴즈 ── */
+    .quiz-screen { display: flex; flex-direction: column; min-height: 100vh; }
+    .progress-bar-container { height: 4px; background: var(--border); }
+    .progress-bar-fill { height: 100%; background: var(--accent); transition: width 0.3s; }
+    .quiz-body { flex: 1; padding: 16px; display: flex; flex-direction: column; }
+    .quiz-counter { text-align: right; font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
+    .quiz-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px 16px; text-align: center; margin-bottom: 20px; overflow: hidden; }
+    .quiz-main-char { line-height: 1.1; margin-bottom: 4px; overflow-wrap: break-word; word-break: break-all; }
+    .quiz-main-romaji { font-size: 28px; font-weight: 700; letter-spacing: 1px; }
+    .quiz-hint { font-size: 15px; color: var(--text-sub); margin-top: 6px; }
+    .choices-grid { display: grid; gap: 10px; margin-bottom: 16px; }
+    .choices-2col { grid-template-columns: 1fr 1fr; }
+    .choices-3col { grid-template-columns: 1fr 1fr 1fr; }
+    .choice-btn { min-height: 56px; font-size: 18px; font-weight: 500; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); cursor: pointer; transition: background 0.1s, border-color 0.1s; -webkit-appearance: none; width: 100%; overflow-wrap: break-word; word-break: break-all; padding: 8px; }
+    .choice-btn:active { transform: scale(0.97); }
+    .choice-btn.correct { background: var(--success-bg); border-color: var(--success); color: var(--success); }
+    .choice-btn.wrong   { background: var(--danger-bg);  border-color: var(--danger);  color: var(--danger); }
+    .choice-btn.dimmed  { opacity: 0.4; }
+    .feedback-area { min-height: 28px; text-align: center; font-size: 16px; font-weight: 600; margin-bottom: 12px; }
+    .feedback-correct { color: var(--success); }
+    .feedback-wrong   { color: var(--danger); }
+    .word-meaning { font-size: 20px; font-weight: 700; color: var(--success); text-align: center; margin: 4px 0 12px; display: none; }
+    .next-wrap { margin-top: auto; }
+    .speak-btn { background: none; border: none; font-size: 22px; cursor: pointer; min-width: 40px; min-height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: background 0.1s; }
+    .speak-btn:active { background: var(--accent-bg); }
+    .note-btn { background: none; border: none; font-size: 20px; cursor: pointer; min-width: 40px; min-height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 50%; color: var(--text-muted); transition: color 0.15s; }
+    .note-btn.noted { color: #f59e0b; }
+    .header-right { display: flex; gap: 0; }
+    /* ── 오답노트 ── */
+    .notes-screen { padding: 0 16px 24px; display: flex; flex-direction: column; min-height: calc(100vh - 56px); }
+    .notes-tabs { display: flex; gap: 8px; margin-bottom: 16px; padding-top: 16px; }
+    .notes-tab { flex: 1; padding: 8px; border: 1px solid var(--border); background: var(--surface); border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; }
+    .notes-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .notes-list { flex: 1; display: flex; flex-direction: column; gap: 8px; }
+    .notes-item { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; display: flex; align-items: center; gap: 12px; }
+    .notes-char { font-family: var(--jp-font); font-size: 32px; min-width: 48px; text-align: center; line-height: 1; }
+    .notes-info { flex: 1; min-width: 0; }
+    .notes-romaji { font-size: 14px; color: var(--text-sub); }
+    .notes-meaning { font-size: 14px; color: var(--accent); font-weight: 600; }
+    .notes-badge { display: inline-block; font-size: 11px; padding: 2px 6px; border-radius: 4px; margin-top: 3px; }
+    .notes-badge.wrong { background: var(--danger-bg); color: var(--danger); }
+    .notes-badge.book { background: #fef3c7; color: #d97706; }
+    .notes-del { background: none; border: none; font-size: 18px; cursor: pointer; color: var(--text-muted); padding: 4px 8px; flex-shrink: 0; }
+    .notes-empty { text-align: center; color: var(--text-muted); padding: 64px 0; font-size: 16px; line-height: 2; }
+    .accordion-header { display:flex; align-items:center; justify-content:space-between; padding:11px 14px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-sm); cursor:pointer; margin-bottom:2px; user-select:none; }
+    .accordion-header:active { background:var(--accent-bg); }
+    .accordion-title { font-size:14px; font-weight:600; }
+    .accordion-meta { font-size:12px; color:var(--text-muted); display:flex; align-items:center; gap:8px; }
+    .accordion-arrow { font-size:11px; transition:transform 0.2s; }
+    .accordion-arrow.open { transform:rotate(180deg); }
+    .accordion-body { margin-bottom:6px; }
+    .type-input { width:100%; padding:14px 16px; font-size:20px; border:2px solid var(--border); border-radius:var(--radius); background:var(--surface); color:var(--text); outline:none; text-align:center; -webkit-appearance:none; }
+    .type-input:focus { border-color:var(--accent); }
+    .read-flash-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:32px 20px; text-align:center; display:flex; flex-direction:column; align-items:center; gap:14px; margin-bottom:20px; cursor:pointer; user-select:none; -webkit-tap-highlight-color:transparent; }
+    .read-flash-card:active { background:var(--accent-bg); }
+    .rf-char { line-height:1.1; }
+    .rf-reading { font-size:26px; font-weight:700; color:var(--accent); }
+    .rf-tap-hint { font-size:13px; color:var(--text-muted); }
+    /* ── 쓰기 캔버스 ── */
+    .draw-wrap { display:flex; flex-direction:column; align-items:center; gap:8px; }
+    #draw-canvas { border:2px solid var(--border); border-radius:12px; background:#fff; touch-action:none; cursor:crosshair; width:280px; height:280px; max-width:90vw; max-height:90vw; }
+    .draw-btns { display:flex; gap:8px; width:100%; max-width:280px; }
+    .btn-success { background:var(--success); color:#fff; border:1px solid var(--success); border-radius:var(--radius); padding:12px; font-size:16px; font-weight:600; cursor:pointer; }
+
+    /* ── 말하기 ── */
+    .speak-area { display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 20px 0; }
+    .mic-btn { width: 80px; height: 80px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 32px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.15s, transform 0.1s; -webkit-appearance: none; }
+    .mic-btn.listening { background: var(--danger); }
+    .mic-btn:active { transform: scale(0.95); }
+    .speak-status { font-size: 14px; color: var(--text-muted); text-align: center; }
+    .speak-recognized { font-size: 28px; font-weight: 600; color: var(--text-sub); min-height: 36px; }
+
+    /* ── 단어 플래시카드 ── */
+    .flash-screen { display: flex; flex-direction: column; min-height: 100vh; }
+    .flash-body { flex: 1; padding: 16px; display: flex; flex-direction: column; }
+    .flash-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 32px 20px; text-align: center; flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; margin-bottom: 20px; }
+    .flash-jp { line-height: 1.1; overflow-wrap: break-word; word-break: break-all; max-width: 100%; }
+    .flash-romaji { font-size: 22px; color: var(--text-sub); font-weight: 600; letter-spacing: 1px; }
+    .flash-meaning { font-size: 20px; color: var(--accent); font-weight: 700; }
+    .flash-counter { text-align: right; font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
+
+    /* ── 결과 ── */
+    .result-screen { padding: 32px 16px 24px; display: flex; flex-direction: column; align-items: center; gap: 16px; min-height: 100vh; }
+    .result-icon { font-size: 64px; }
+    .result-score { font-size: 72px; font-weight: 800; line-height: 1; }
+    .result-score.pass { color: var(--success); }
+    .result-score.fail { color: var(--danger); }
+    .result-detail { font-size: 18px; color: var(--text-sub); }
+    .result-actions { display: flex; flex-direction: column; gap: 10px; width: 100%; margin-top: auto; }
+    .info-box { background: var(--accent-bg); border: 1px solid var(--accent); border-radius: var(--radius); padding: 14px; font-size: 14px; color: var(--accent); text-align: center; margin: 12px 0; line-height: 1.5; }
+    .word-done { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 40px 16px; text-align: center; }
+    .word-done-icon { font-size: 64px; }
+    .word-done-msg { font-size: 20px; font-weight: 700; }
+    .word-done-sub { font-size: 14px; color: var(--text-sub); }
+  </style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+// ═══════════════════════════════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════════════════════════════
+
+const LEVELS = [
+  { id:1,  name:'あ행', chars:[['あ','a'],['い','i'],['う','u'],['え','e'],['お','o']] },
+  { id:2,  name:'か행', chars:[['か','ka'],['き','ki'],['く','ku'],['け','ke'],['こ','ko']] },
+  { id:3,  name:'さ행', chars:[['さ','sa'],['し','shi'],['す','su'],['せ','se'],['そ','so']] },
+  { id:4,  name:'た행', chars:[['た','ta'],['ち','chi'],['つ','tsu'],['て','te'],['と','to']] },
+  { id:5,  name:'な행', chars:[['な','na'],['に','ni'],['ぬ','nu'],['ね','ne'],['の','no']] },
+  { id:6,  name:'は행', chars:[['は','ha'],['ひ','hi'],['ふ','fu'],['へ','he'],['ほ','ho']] },
+  { id:7,  name:'ま행', chars:[['ま','ma'],['み','mi'],['む','mu'],['め','me'],['も','mo']] },
+  { id:8,  name:'や행', chars:[['や','ya'],['ゆ','yu'],['よ','yo']] },
+  { id:9,  name:'ら행', chars:[['ら','ra'],['り','ri'],['る','ru'],['れ','re'],['ろ','ro']] },
+  { id:10, name:'わ행', chars:[['わ','wa'],['を','wo'],['ん','n']] },
+];
+
+const DAKUTEN_LEVELS = [
+  { id:101, name:'が행', group:'dakuten', chars:[['が','ga'],['ぎ','gi'],['ぐ','gu'],['げ','ge'],['ご','go']] },
+  { id:102, name:'ざ행', group:'dakuten', chars:[['ざ','za'],['じ','ji'],['ず','zu'],['ぜ','ze'],['ぞ','zo']] },
+  { id:103, name:'だ행', group:'dakuten', chars:[['だ','da'],['ぢ','di'],['づ','du'],['で','de'],['ど','do']] },
+  { id:104, name:'ば행', group:'dakuten', chars:[['ば','ba'],['び','bi'],['ぶ','bu'],['べ','be'],['ぼ','bo']] },
+];
+const HANDAKUTEN_LEVELS = [
+  { id:105, name:'ぱ행', group:'handakuten', chars:[['ぱ','pa'],['ぴ','pi'],['ぷ','pu'],['ぺ','pe'],['ぽ','po']] },
+];
+
+const YOUON_LEVELS = [
+  { id:201, name:'きゃ행', group:'youon', chars:[['きゃ','kya'],['きゅ','kyu'],['きょ','kyo']] },
+  { id:202, name:'しゃ행', group:'youon', chars:[['しゃ','sha'],['しゅ','shu'],['しょ','sho']] },
+  { id:203, name:'ちゃ행', group:'youon', chars:[['ちゃ','cha'],['ちゅ','chu'],['ちょ','cho']] },
+  { id:204, name:'にゃ행', group:'youon', chars:[['にゃ','nya'],['にゅ','nyu'],['にょ','nyo']] },
+  { id:205, name:'ひゃ행', group:'youon', chars:[['ひゃ','hya'],['ひゅ','hyu'],['ひょ','hyo']] },
+  { id:206, name:'みゃ행', group:'youon', chars:[['みゃ','mya'],['みゅ','myu'],['みょ','myo']] },
+  { id:207, name:'りゃ행', group:'youon', chars:[['りゃ','rya'],['りゅ','ryu'],['りょ','ryo']] },
+  { id:208, name:'ぎゃ행', group:'youon', chars:[['ぎゃ','gya'],['ぎゅ','gyu'],['ぎょ','gyo']] },
+  { id:209, name:'じゃ행', group:'youon', chars:[['じゃ','ja'],['じゅ','ju'],['じょ','jo']] },
+  { id:210, name:'びゃ행', group:'youon', chars:[['びゃ','bya'],['びゅ','byu'],['びょ','byo']] },
+  { id:211, name:'ぴゃ행', group:'youon', chars:[['ぴゃ','pya'],['ぴゅ','pyu'],['ぴょ','pyo']] },
+];
+
+[LEVELS, DAKUTEN_LEVELS, HANDAKUTEN_LEVELS, YOUON_LEVELS].forEach(arr=>arr.forEach(l=>l.script='hira'));
+
+// ── 카타카나 ──────────────────────────────────────────────────────
+const LEVELS_KATA = [
+  { id:1001, name:'ア행', chars:[['ア','a'],['イ','i'],['ウ','u'],['エ','e'],['オ','o']] },
+  { id:1002, name:'カ행', chars:[['カ','ka'],['キ','ki'],['ク','ku'],['ケ','ke'],['コ','ko']] },
+  { id:1003, name:'サ행', chars:[['サ','sa'],['シ','shi'],['ス','su'],['セ','se'],['ソ','so']] },
+  { id:1004, name:'タ행', chars:[['タ','ta'],['チ','chi'],['ツ','tsu'],['テ','te'],['ト','to']] },
+  { id:1005, name:'ナ행', chars:[['ナ','na'],['ニ','ni'],['ヌ','nu'],['ネ','ne'],['ノ','no']] },
+  { id:1006, name:'ハ행', chars:[['ハ','ha'],['ヒ','hi'],['フ','fu'],['ヘ','he'],['ホ','ho']] },
+  { id:1007, name:'マ행', chars:[['マ','ma'],['ミ','mi'],['ム','mu'],['メ','me'],['モ','mo']] },
+  { id:1008, name:'ヤ행', chars:[['ヤ','ya'],['ユ','yu'],['ヨ','yo']] },
+  { id:1009, name:'ラ행', chars:[['ラ','ra'],['リ','ri'],['ル','ru'],['レ','re'],['ロ','ro']] },
+  { id:1010, name:'ワ행', chars:[['ワ','wa'],['ヲ','wo'],['ン','n']] },
+];
+const DAKUTEN_LEVELS_KATA = [
+  { id:1101, name:'ガ행', group:'dakuten', chars:[['ガ','ga'],['ギ','gi'],['グ','gu'],['ゲ','ge'],['ゴ','go']] },
+  { id:1102, name:'ザ행', group:'dakuten', chars:[['ザ','za'],['ジ','ji'],['ズ','zu'],['ゼ','ze'],['ゾ','zo']] },
+  { id:1103, name:'ダ행', group:'dakuten', chars:[['ダ','da'],['ヂ','di'],['ヅ','du'],['デ','de'],['ド','do']] },
+  { id:1104, name:'バ행', group:'dakuten', chars:[['バ','ba'],['ビ','bi'],['ブ','bu'],['ベ','be'],['ボ','bo']] },
+];
+const HANDAKUTEN_LEVELS_KATA = [
+  { id:1105, name:'パ행', group:'handakuten', chars:[['パ','pa'],['ピ','pi'],['プ','pu'],['ペ','pe'],['ポ','po']] },
+];
+const YOUON_LEVELS_KATA = [
+  { id:1201, name:'キャ행', group:'youon', chars:[['キャ','kya'],['キュ','kyu'],['キョ','kyo']] },
+  { id:1202, name:'シャ행', group:'youon', chars:[['シャ','sha'],['シュ','shu'],['ショ','sho']] },
+  { id:1203, name:'チャ행', group:'youon', chars:[['チャ','cha'],['チュ','chu'],['チョ','cho']] },
+  { id:1204, name:'ニャ행', group:'youon', chars:[['ニャ','nya'],['ニュ','nyu'],['ニョ','nyo']] },
+  { id:1205, name:'ヒャ행', group:'youon', chars:[['ヒャ','hya'],['ヒュ','hyu'],['ヒョ','hyo']] },
+  { id:1206, name:'ミャ행', group:'youon', chars:[['ミャ','mya'],['ミュ','myu'],['ミョ','myo']] },
+  { id:1207, name:'リャ행', group:'youon', chars:[['リャ','rya'],['リュ','ryu'],['リョ','ryo']] },
+  { id:1208, name:'ギャ행', group:'youon', chars:[['ギャ','gya'],['ギュ','gyu'],['ギョ','gyo']] },
+  { id:1209, name:'ジャ행', group:'youon', chars:[['ジャ','ja'],['ジュ','ju'],['ジョ','jo']] },
+  { id:1210, name:'ビャ행', group:'youon', chars:[['ビャ','bya'],['ビュ','byu'],['ビョ','byo']] },
+  { id:1211, name:'ピャ행', group:'youon', chars:[['ピャ','pya'],['ピュ','pyu'],['ピョ','pyo']] },
+];
+
+[LEVELS_KATA, DAKUTEN_LEVELS_KATA, HANDAKUTEN_LEVELS_KATA, YOUON_LEVELS_KATA].forEach(arr=>arr.forEach(l=>l.script='kata'));
+
+const DAKUTEN_ALL_HIRA = [...DAKUTEN_LEVELS, ...HANDAKUTEN_LEVELS];
+
+const ALL_LEVELS = [...LEVELS, ...DAKUTEN_LEVELS, ...HANDAKUTEN_LEVELS, ...YOUON_LEVELS, ...LEVELS_KATA, ...DAKUTEN_LEVELS_KATA, ...HANDAKUTEN_LEVELS_KATA, ...YOUON_LEVELS_KATA];
+
+const SCRIPTS = {
+  hira: { label:'히라가나', basic:LEVELS, dakuten:DAKUTEN_LEVELS, handakuten:HANDAKUTEN_LEVELS, youon:YOUON_LEVELS },
+  kata: { label:'카타카나', basic:LEVELS_KATA, dakuten:DAKUTEN_LEVELS_KATA, handakuten:HANDAKUTEN_LEVELS_KATA, youon:YOUON_LEVELS_KATA },
+};
+
+const WORDS = [
+  // ── lv1 (あいうえお) ──────────────────────────────────────────
+  {w:'あい',r:'ai',m:'사랑',lv:1},{w:'いえ',r:'ie',m:'집',lv:1},{w:'うえ',r:'ue',m:'위',lv:1},
+  {w:'おい',r:'oi',m:'조카(남)',lv:1},{w:'いう',r:'iu',m:'말하다',lv:1},{w:'あお',r:'ao',m:'파란색',lv:1},
+  {w:'おおい',r:'ooi',m:'많다',lv:1},{w:'あおい',r:'aoi',m:'파랗다',lv:1},{w:'いいえ',r:'iie',m:'아니오',lv:1},
+  {w:'うお',r:'uo',m:'물고기',lv:1},{w:'おう',r:'ou',m:'왕',lv:1},{w:'おおきい',r:'ookii',m:'크다',lv:1},
+  // ── lv2 (+ か행·탁음) ──────────────────────────────────────────
+  {w:'あか',r:'aka',m:'빨강',lv:2},{w:'いか',r:'ika',m:'오징어',lv:2},{w:'えき',r:'eki',m:'역',lv:2},
+  {w:'かお',r:'kao',m:'얼굴',lv:2},{w:'きく',r:'kiku',m:'듣다',lv:2},{w:'あき',r:'aki',m:'가을',lv:2},
+  {w:'いけ',r:'ike',m:'연못',lv:2},{w:'かく',r:'kaku',m:'쓰다',lv:2},{w:'こえ',r:'koe',m:'목소리',lv:2},
+  {w:'こい',r:'koi',m:'잉어',lv:2},{w:'かい',r:'kai',m:'조개',lv:2},{w:'うえき',r:'ueki',m:'화분',lv:2},
+  {w:'くうき',r:'kuuki',m:'공기',lv:2},{w:'おか',r:'oka',m:'언덕',lv:2},{w:'くき',r:'kuki',m:'줄기',lv:2},
+  {w:'ここ',r:'koko',m:'여기',lv:2},{w:'かかく',r:'kakaku',m:'가격',lv:2},{w:'おかあ',r:'okaa',m:'어머니(호칭)',lv:2},
+  {w:'かき',r:'kaki',m:'굴/감',lv:2},{w:'かぎ',r:'kagi',m:'열쇠',lv:2},{w:'こけ',r:'koke',m:'이끼',lv:2},
+  {w:'きかい',r:'kikai',m:'기계',lv:2},{w:'かがく',r:'kagaku',m:'과학',lv:2},
+  {w:'いきおい',r:'ikioi',m:'기세',lv:2},{w:'けいご',r:'keigo',m:'경어',lv:2},
+  {w:'げか',r:'geka',m:'외과',lv:2},{w:'きかく',r:'kikaku',m:'기획',lv:2},
+  {w:'がっこう',r:'gakkou',m:'학교',lv:2},{w:'かいがい',r:'kaigai',m:'해외',lv:2},
+  {w:'こうき',r:'kouki',m:'호기심',lv:2},{w:'いいか',r:'iika',m:'좋은지',lv:2},
+  // ── lv3 (+ さ행·탁음) ──────────────────────────────────────────
+  {w:'いす',r:'isu',m:'의자',lv:3},{w:'うそ',r:'uso',m:'거짓말',lv:3},{w:'かさ',r:'kasa',m:'우산',lv:3},
+  {w:'すき',r:'suki',m:'좋아함',lv:3},{w:'せかい',r:'sekai',m:'세계',lv:3},{w:'そこ',r:'soko',m:'거기',lv:3},
+  {w:'あさ',r:'asa',m:'아침',lv:3},{w:'すいか',r:'suika',m:'수박',lv:3},{w:'おかし',r:'okashi',m:'과자',lv:3},
+  {w:'しお',r:'shio',m:'소금',lv:3},{w:'うし',r:'ushi',m:'소(동물)',lv:3},{w:'くさ',r:'kusa',m:'풀',lv:3},
+  {w:'おそい',r:'osoi',m:'느리다',lv:3},{w:'さけ',r:'sake',m:'술/연어',lv:3},{w:'すこし',r:'sukoshi',m:'조금',lv:3},
+  {w:'いそ',r:'iso',m:'바닷가',lv:3},{w:'きせき',r:'kiseki',m:'기적',lv:3},{w:'さかい',r:'sakai',m:'경계',lv:3},
+  {w:'こうし',r:'koushi',m:'송아지',lv:3},{w:'あせ',r:'ase',m:'땀',lv:3},
+  {w:'おいしい',r:'oishii',m:'맛있다',lv:3},{w:'あじ',r:'aji',m:'맛',lv:3},{w:'すごい',r:'sugoi',m:'대단하다',lv:3},
+  {w:'おすし',r:'osushi',m:'초밥',lv:3},{w:'かじ',r:'kaji',m:'화재',lv:3},{w:'えさ',r:'esa',m:'먹이',lv:3},
+  {w:'いそがしい',r:'isogashii',m:'바쁘다',lv:3},{w:'かぞく',r:'kazoku',m:'가족',lv:3},
+  {w:'きず',r:'kizu',m:'상처',lv:3},{w:'くさい',r:'kusai',m:'냄새나다',lv:3},{w:'ざっし',r:'zasshi',m:'잡지',lv:3},
+  {w:'こうじ',r:'kouji',m:'공사',lv:3},{w:'さかなや',r:'sakanaya',m:'생선가게',lv:3},
+  // ── lv4 (+ た행·탁음·촉음) ────────────────────────────────────
+  {w:'うた',r:'uta',m:'노래',lv:4},{w:'たこ',r:'tako',m:'문어',lv:4},{w:'つき',r:'tsuki',m:'달',lv:4},
+  {w:'おと',r:'oto',m:'소리',lv:4},{w:'こと',r:'koto',m:'것/일',lv:4},{w:'した',r:'shita',m:'아래',lv:4},
+  {w:'うち',r:'uchi',m:'집/안',lv:4},{w:'きって',r:'kitte',m:'우표',lv:4},{w:'てつ',r:'tetsu',m:'철',lv:4},
+  {w:'あした',r:'ashita',m:'내일',lv:4},{w:'そと',r:'soto',m:'밖',lv:4},{w:'つち',r:'tsuchi',m:'흙',lv:4},
+  {w:'きた',r:'kita',m:'북쪽',lv:4},{w:'いたい',r:'itai',m:'아프다',lv:4},{w:'てき',r:'teki',m:'적',lv:4},
+  {w:'たて',r:'tate',m:'세로',lv:4},{w:'きせつ',r:'kisetsu',m:'계절',lv:4},{w:'いつ',r:'itsu',m:'언제',lv:4},
+  {w:'ちかてつ',r:'chikatetsu',m:'지하철',lv:4},{w:'ちち',r:'chichi',m:'아빠',lv:4},{w:'いって',r:'itte',m:'가다(て형)',lv:4},
+  {w:'おとこ',r:'otoko',m:'남자',lv:4},{w:'だいたい',r:'daitai',m:'대체로',lv:4},
+  {w:'したく',r:'shitaku',m:'준비',lv:4},{w:'たいせつ',r:'taisetsu',m:'소중한',lv:4},
+  {w:'ちかく',r:'chikaku',m:'가까이',lv:4},{w:'おとうと',r:'otouto',m:'남동생',lv:4},
+  {w:'とくい',r:'tokui',m:'특기',lv:4},{w:'こたえ',r:'kotae',m:'대답',lv:4},
+  {w:'あたたかい',r:'atatakai',m:'따뜻하다',lv:4},{w:'とけい',r:'tokei',m:'시계',lv:4},
+  {w:'だいどころ',r:'daidokoro',m:'부엌',lv:4},{w:'そうだ',r:'souda',m:'그렇다',lv:4},
+  // ── lv5 (+ な행) ──────────────────────────────────────────────
+  {w:'ねこ',r:'neko',m:'고양이',lv:5},{w:'いぬ',r:'inu',m:'개',lv:5},{w:'さかな',r:'sakana',m:'생선',lv:5},
+  {w:'きのこ',r:'kinoko',m:'버섯',lv:5},{w:'にく',r:'niku',m:'고기',lv:5},{w:'なか',r:'naka',m:'안/가운데',lv:5},
+  {w:'なつ',r:'natsu',m:'여름',lv:5},{w:'にし',r:'nishi',m:'서쪽',lv:5},{w:'いのち',r:'inochi',m:'생명',lv:5},
+  {w:'ぬの',r:'nuno',m:'천/직물',lv:5},{w:'なに',r:'nani',m:'무엇',lv:5},{w:'ねつ',r:'netsu',m:'열(熱)',lv:5},
+  {w:'なかなか',r:'nakanaka',m:'좀처럼',lv:5},{w:'たのしい',r:'tanoshii',m:'즐거운',lv:5},{w:'すなお',r:'sunao',m:'순수한',lv:5},
+  {w:'のき',r:'noki',m:'처마',lv:5},{w:'ちいさな',r:'chiisana',m:'작은',lv:5},{w:'にて',r:'nite',m:'...에서',lv:5},
+  {w:'のこす',r:'nokosu',m:'남기다',lv:5},{w:'そのこ',r:'sonoko',m:'그 아이',lv:5},
+  {w:'おなか',r:'onaka',m:'배(몸)',lv:5},{w:'きのう',r:'kinou',m:'어제',lv:5},{w:'のど',r:'nodo',m:'목구멍',lv:5},
+  {w:'たぬき',r:'tanuki',m:'너구리',lv:5},{w:'にがい',r:'nigai',m:'쓰다(맛)',lv:5},
+  {w:'ながい',r:'nagai',m:'길다',lv:5},{w:'なつかしい',r:'natsukashii',m:'그립다',lv:5},
+  {w:'とにかく',r:'tonikaku',m:'어쨌든',lv:5},{w:'おに',r:'oni',m:'도깨비',lv:5},
+  {w:'どうして',r:'doushite',m:'왜',lv:5},{w:'にっき',r:'nikki',m:'일기',lv:5},
+  // ── lv6 (+ は행·탁음·반탁음) ──────────────────────────────────
+  {w:'はな',r:'hana',m:'꽃',lv:6},{w:'はし',r:'hashi',m:'젓가락',lv:6},{w:'ほし',r:'hoshi',m:'별',lv:6},
+  {w:'ふね',r:'fune',m:'배(선박)',lv:6},{w:'ひとつ',r:'hitotsu',m:'하나',lv:6},{w:'はは',r:'haha',m:'엄마',lv:6},
+  {w:'ほね',r:'hone',m:'뼈',lv:6},{w:'ふく',r:'fuku',m:'옷/불다',lv:6},{w:'へた',r:'heta',m:'서투른',lv:6},
+  {w:'はこ',r:'hako',m:'상자',lv:6},{w:'ひふ',r:'hifu',m:'피부',lv:6},{w:'ほか',r:'hoka',m:'다른/외',lv:6},
+  {w:'ふた',r:'futa',m:'뚜껑',lv:6},{w:'はた',r:'hata',m:'깃발',lv:6},{w:'はなし',r:'hanashi',m:'이야기',lv:6},
+  {w:'ほのか',r:'honoka',m:'은은한',lv:6},{w:'ひかく',r:'hikaku',m:'비교',lv:6},{w:'ふかい',r:'fukai',m:'깊다',lv:6},
+  {w:'はてな',r:'hatena',m:'의문',lv:6},{w:'ほとけ',r:'hotoke',m:'부처님',lv:6},
+  {w:'はたけ',r:'hatake',m:'밭',lv:6},{w:'はなす',r:'hanasu',m:'말하다',lv:6},{w:'ほしい',r:'hoshii',m:'원하다',lv:6},
+  {w:'ふとい',r:'futoi',m:'굵다',lv:6},{w:'はしご',r:'hashigo',m:'사다리',lv:6},
+  {w:'ふつか',r:'futsuka',m:'이틀',lv:6},{w:'ひがい',r:'higai',m:'피해',lv:6},
+  {w:'ふでばこ',r:'fudebako',m:'필통',lv:6},{w:'さいふ',r:'saifu',m:'지갑',lv:6},
+  {w:'ひとこと',r:'hitokoto',m:'한마디',lv:6},{w:'ひかり',r:'hikali',m:'빛',lv:6},
+  // ── lv7 (+ ま행) ──────────────────────────────────────────────
+  {w:'うみ',r:'umi',m:'바다',lv:7},{w:'みせ',r:'mise',m:'가게',lv:7},{w:'みち',r:'michi',m:'길',lv:7},
+  {w:'きもち',r:'kimochi',m:'기분',lv:7},{w:'むし',r:'mushi',m:'벌레',lv:7},{w:'もの',r:'mono',m:'물건',lv:7},
+  {w:'まち',r:'machi',m:'마을/거리',lv:7},{w:'あめ',r:'ame',m:'비/사탕',lv:7},{w:'いま',r:'ima',m:'지금',lv:7},
+  {w:'まえ',r:'mae',m:'앞',lv:7},{w:'むかし',r:'mukashi',m:'옛날',lv:7},{w:'まめ',r:'mame',m:'콩',lv:7},
+  {w:'もも',r:'momo',m:'복숭아',lv:7},{w:'うめ',r:'ume',m:'매실',lv:7},{w:'かみ',r:'kami',m:'머리카락',lv:7},
+  {w:'くも',r:'kumo',m:'구름',lv:7},{w:'なまえ',r:'namae',m:'이름',lv:7},{w:'もち',r:'mochi',m:'떡',lv:7},
+  {w:'まつ',r:'matsu',m:'기다리다',lv:7},{w:'みなみ',r:'minami',m:'남쪽',lv:7},{w:'しまう',r:'shimau',m:'끝내다',lv:7},
+  {w:'たまご',r:'tamago',m:'달걀',lv:7},{w:'さむい',r:'samui',m:'춥다',lv:7},{w:'かめ',r:'kame',m:'거북',lv:7},
+  {w:'みそ',r:'miso',m:'된장',lv:7},{w:'おもい',r:'omoi',m:'무겁다',lv:7},{w:'うまい',r:'umai',m:'맛있다',lv:7},
+  {w:'まいにち',r:'mainichi',m:'매일',lv:7},{w:'いもうと',r:'imouto',m:'여동생',lv:7},
+  {w:'たべもの',r:'tabemono',m:'음식',lv:7},{w:'くだもの',r:'kudamono',m:'과일',lv:7},
+  {w:'みぎ',r:'migi',m:'오른쪽',lv:7},{w:'むかえ',r:'mukae',m:'마중',lv:7},
+  {w:'あまい',r:'amai',m:'달다',lv:7},{w:'こむ',r:'komu',m:'붐비다',lv:7},
+  {w:'おもしろい',r:'omoshiroi',m:'재미있다(lv7)',lv:7},{w:'ふとめ',r:'futome',m:'좀 굵은',lv:7},
+  // ── lv8 (+ や행·요음) ──────────────────────────────────────────
+  {w:'やま',r:'yama',m:'산',lv:8},{w:'ゆき',r:'yuki',m:'눈(雪)',lv:8},{w:'やすみ',r:'yasumi',m:'휴식',lv:8},
+  {w:'よこ',r:'yoko',m:'옆',lv:8},{w:'よい',r:'yoi',m:'좋다',lv:8},{w:'ゆめ',r:'yume',m:'꿈',lv:8},
+  {w:'やく',r:'yaku',m:'역할',lv:8},{w:'よむ',r:'yomu',m:'읽다',lv:8},{w:'ゆか',r:'yuka',m:'바닥',lv:8},
+  {w:'もや',r:'moya',m:'안개',lv:8},{w:'ゆうき',r:'yuuki',m:'용기',lv:8},{w:'やみ',r:'yami',m:'어둠',lv:8},
+  {w:'はやい',r:'hayai',m:'빠른',lv:8},{w:'やさしい',r:'yasashii',m:'친절한',lv:8},{w:'ゆのみ',r:'yunomi',m:'찻잔',lv:8},
+  {w:'よそ',r:'yoso',m:'다른 곳',lv:8},{w:'まよう',r:'mayou',m:'헤매다',lv:8},{w:'ゆめみる',r:'yumemiru',m:'꿈꾸다',lv:8},
+  {w:'やさい',r:'yasai',m:'채소',lv:8},{w:'よやく',r:'yoyaku',m:'예약',lv:8},
+  {w:'おやつ',r:'oyatsu',m:'간식',lv:8},{w:'はやく',r:'hayaku',m:'빨리',lv:8},
+  {w:'おやすみ',r:'oyasumi',m:'잘 자요',lv:8},{w:'たいよう',r:'taiyou',m:'태양',lv:8},
+  {w:'こうよう',r:'kouyou',m:'단풍',lv:8},{w:'かようび',r:'kayoubi',m:'화요일',lv:8},
+  {w:'もよう',r:'moyou',m:'무늬',lv:8},{w:'おはよう',r:'ohayou',m:'좋은 아침',lv:8},
+  {w:'やすい',r:'yasui',m:'싸다/쉽다',lv:8},{w:'ゆうべ',r:'yuube',m:'어젯밤',lv:8},
+  // ── lv9 (+ ら행) ──────────────────────────────────────────────
+  {w:'はる',r:'haru',m:'봄',lv:9},{w:'そら',r:'sora',m:'하늘',lv:9},{w:'さくら',r:'sakura',m:'벚꽃',lv:9},
+  {w:'これ',r:'kore',m:'이것',lv:9},{w:'むら',r:'mura',m:'마을',lv:9},{w:'くる',r:'kuru',m:'오다',lv:9},
+  {w:'ひる',r:'hiru',m:'낮',lv:9},{w:'なる',r:'naru',m:'되다',lv:9},{w:'ある',r:'aru',m:'있다',lv:9},
+  {w:'ふる',r:'furu',m:'내리다',lv:9},{w:'あれ',r:'are',m:'저것',lv:9},{w:'それ',r:'sore',m:'그것',lv:9},
+  {w:'うら',r:'ura',m:'뒷면',lv:9},{w:'はれ',r:'hare',m:'맑음',lv:9},{w:'もり',r:'mori',m:'숲',lv:9},
+  {w:'よる',r:'yoru',m:'밤',lv:9},{w:'のる',r:'noru',m:'타다',lv:9},{w:'きれい',r:'kirei',m:'예쁜',lv:9},
+  {w:'かれ',r:'kare',m:'그(남자)',lv:9},{w:'さる',r:'saru',m:'원숭이',lv:9},{w:'くれる',r:'kureru',m:'주다',lv:9},
+  {w:'てる',r:'teru',m:'빛나다',lv:9},{w:'はりこ',r:'hariko',m:'종이탈',lv:9},
+  {w:'おにぎり',r:'onigiri',m:'주먹밥',lv:9},{w:'からい',r:'karai',m:'맵다',lv:9},
+  {w:'つかれる',r:'tsukareru',m:'피곤하다',lv:9},{w:'たべる',r:'taberu',m:'먹다',lv:9},
+  {w:'みせる',r:'miseru',m:'보여주다',lv:9},{w:'おふろ',r:'ofuro',m:'욕조/목욕',lv:9},
+  {w:'はいる',r:'hairu',m:'들어가다',lv:9},{w:'つらい',r:'tsurai',m:'힘들다',lv:9},
+  {w:'しろい',r:'shiroi',m:'하얗다',lv:9},{w:'くらい',r:'kurai',m:'어둡다',lv:9},
+  {w:'ひらく',r:'hiraku',m:'열다',lv:9},{w:'ふるい',r:'furui',m:'오래된',lv:9},
+  {w:'うれしい',r:'ureshii',m:'기쁘다',lv:9},{w:'ひとり',r:'hitori',m:'혼자',lv:9},
+  {w:'ひだり',r:'hidari',m:'왼쪽',lv:9},{w:'とりにく',r:'toriniku',m:'닭고기',lv:9},
+  {w:'いろ',r:'iro',m:'색깔',lv:9},{w:'ありがとう',r:'arigatou',m:'감사합니다',lv:9},
+  {w:'かえる',r:'kaeru',m:'개구리/돌아가다',lv:9},{w:'くるしい',r:'kurushii',m:'괴롭다',lv:9},
+  // ── lv10 (+ わ·ん) ─────────────────────────────────────────────
+  {w:'わたし',r:'watashi',m:'나',lv:10},{w:'にわ',r:'niwa',m:'정원',lv:10},{w:'かわ',r:'kawa',m:'강',lv:10},
+  {w:'わかる',r:'wakaru',m:'이해하다',lv:10},{w:'わかい',r:'wakai',m:'젊은',lv:10},{w:'わらう',r:'warau',m:'웃다',lv:10},
+  {w:'にほん',r:'nihon',m:'일본',lv:10},{w:'みかん',r:'mikan',m:'귤',lv:10},{w:'はんこ',r:'hanko',m:'도장',lv:10},
+  {w:'おわり',r:'owari',m:'끝',lv:10},{w:'わに',r:'wani',m:'악어',lv:10},{w:'わすれる',r:'wasureru',m:'잊다',lv:10},
+  {w:'はなわ',r:'hanawa',m:'화환',lv:10},{w:'こんにちは',r:'konnichiha',m:'안녕하세요',lv:10},
+  {w:'ごはん',r:'gohan',m:'밥',lv:10},{w:'でんわ',r:'denwa',m:'전화',lv:10},
+  {w:'にほんご',r:'nihongo',m:'일본어',lv:10},{w:'せんせい',r:'sensei',m:'선생님',lv:10},
+  {w:'かんじ',r:'kanji',m:'한자',lv:10},{w:'みんな',r:'minna',m:'모두',lv:10},
+  {w:'すみません',r:'sumimasen',m:'실례합니다',lv:10},{w:'げんき',r:'genki',m:'건강한',lv:10},
+  {w:'おかあさん',r:'okaasan',m:'어머니',lv:10},{w:'おとうさん',r:'otousan',m:'아버지',lv:10},
+  {w:'たんじょうび',r:'tanjoubi',m:'생일',lv:10},{w:'しんぶん',r:'shinbun',m:'신문',lv:10},
+  {w:'べんとう',r:'bentou',m:'도시락',lv:10},{w:'がっこう',r:'gakkou',m:'학교',lv:10},
+  {w:'にんげん',r:'ningen',m:'인간',lv:10},{w:'でんしゃ',r:'densha',m:'전철',lv:10},
+  // ── 음식/식당 ──────────────────────────────────────────────────
+  {w:'みず',r:'mizu',m:'물',lv:7},{w:'おちゃ',r:'ocha',m:'녹차',lv:4},
+  {w:'あまい',r:'amai',m:'달다',lv:7},{w:'まずい',r:'mazui',m:'맛없다',lv:7},
+  {w:'あつい',r:'atsui',m:'뜨겁다/덥다',lv:4},{w:'つめたい',r:'tsumetai',m:'차갑다',lv:7},
+  {w:'みそしる',r:'misoshiru',m:'된장국',lv:9},{w:'やきとり',r:'yakitori',m:'야키토리',lv:9},
+  {w:'やきそば',r:'yakisoba',m:'야키소바',lv:6},{w:'さしみ',r:'sashimi',m:'회/사시미',lv:7},
+  {w:'てんぷら',r:'tenpura',m:'튀김',lv:7},{w:'うどん',r:'udon',m:'우동',lv:5},
+  {w:'たべもの',r:'tabemono',m:'음식',lv:7},{w:'のみもの',r:'nomimono',m:'음료',lv:7},
+  {w:'おかわり',r:'okawari',m:'리필',lv:9},{w:'くだもの',r:'kudamono',m:'과일',lv:7},
+  {w:'たまねぎ',r:'tamanegi',m:'양파',lv:8},{w:'にんにく',r:'ninniku',m:'마늘',lv:6},
+  {w:'あさごはん',r:'asagohan',m:'아침밥',lv:3},{w:'ひるごはん',r:'hirugohan',m:'점심밥',lv:9},
+  {w:'よるごはん',r:'yorugohan',m:'저녁밥',lv:9},{w:'すきやき',r:'sukiyaki',m:'스키야키',lv:8},
+  {w:'とんかつ',r:'tonkatsu',m:'돈카츠',lv:4},{w:'なっとう',r:'nattou',m:'낫토',lv:4},
+  // ── 여행/교통 ──────────────────────────────────────────────────
+  {w:'みぎ',r:'migi',m:'오른쪽',lv:8},{w:'まっすぐ',r:'massugu',m:'직진',lv:7},
+  {w:'でぐち',r:'deguchi',m:'출구',lv:6},{w:'いりぐち',r:'iriguchi',m:'입구',lv:6},
+  {w:'きっぷ',r:'kippu',m:'표',lv:6},{w:'くるま',r:'kuruma',m:'자동차',lv:7},
+  {w:'ひこうき',r:'hikouki',m:'비행기',lv:6},{w:'のりかえ',r:'norikae',m:'환승',lv:9},
+  {w:'おりる',r:'oriru',m:'내리다',lv:9},{w:'おみやげ',r:'omiyage',m:'기념품',lv:8},
+  {w:'りょかん',r:'ryokan',m:'료칸',lv:9},{w:'くうこう',r:'kuukou',m:'공항',lv:2},
+  {w:'みなと',r:'minato',m:'항구',lv:5},{w:'とおり',r:'toori',m:'거리/도로',lv:9},
+  {w:'りょこう',r:'ryokou',m:'여행',lv:8},{w:'かんこう',r:'kankou',m:'관광',lv:5},
+  {w:'しんごう',r:'shingou',m:'신호등',lv:6},{w:'おてあらい',r:'otearai',m:'화장실',lv:9},
+  {w:'ふつう',r:'futsuu',m:'보통',lv:6},{w:'ちず',r:'chizu',m:'지도',lv:4},
+  {w:'かいだん',r:'kaidan',m:'계단',lv:1},{w:'にもつ',r:'nimotsu',m:'짐',lv:7},
+  // ── 인사/회화 표현 ──────────────────────────────────────────────
+  {w:'こんばんは',r:'konbanwa',m:'안녕하세요(저녁)',lv:6},
+  {w:'ごめんなさい',r:'gomennasai',m:'죄송합니다',lv:5},
+  {w:'ゆっくり',r:'yukkuri',m:'천천히',lv:8},{w:'もういちど',r:'mouichido',m:'한 번 더',lv:4},
+  {w:'おねがいします',r:'onegaishimasu',m:'부탁드립니다',lv:7},
+  {w:'わかりました',r:'wakarimashita',m:'알겠습니다',lv:4},
+  {w:'わかりません',r:'wakarimasen',m:'모릅니다',lv:7},
+  {w:'どうぞ',r:'douzo',m:'어서요',lv:7},{w:'なるほど',r:'naruhodo',m:'그렇군요',lv:6},
+  {w:'もしもし',r:'moshimoshi',m:'여보세요',lv:7},
+  {w:'おかげさま',r:'okagesama',m:'덕분에',lv:8},{w:'たいへん',r:'taihen',m:'힘들다/큰일이다',lv:6},
+  {w:'だいじょうぶ',r:'daijoubu',m:'괜찮아요',lv:8},
+  // ── 집/생활 ──────────────────────────────────────────────────────
+  {w:'へや',r:'heya',m:'방',lv:8},{w:'まど',r:'mado',m:'창문',lv:7},
+  {w:'つくえ',r:'tsukue',m:'책상',lv:4},{w:'ふとん',r:'futon',m:'이불',lv:5},
+  {w:'まくら',r:'makura',m:'베개',lv:9},{w:'でんき',r:'denki',m:'전기/전등',lv:5},
+  {w:'まいにち',r:'mainichi',m:'매일',lv:6},{w:'いつも',r:'itsumo',m:'항상',lv:7},
+  {w:'ときどき',r:'tokidoki',m:'때때로',lv:4},{w:'そうじ',r:'souji',m:'청소',lv:3},
+  {w:'せんたく',r:'sentaku',m:'세탁',lv:4},{w:'りょうり',r:'ryouri',m:'요리',lv:8},
+  {w:'かいもの',r:'kaimono',m:'쇼핑',lv:7},
+  // ── 날씨/계절 ────────────────────────────────────────────────────
+  {w:'てんき',r:'tenki',m:'날씨',lv:5},{w:'くもり',r:'kumori',m:'흐림',lv:9},
+  {w:'かぜ',r:'kaze',m:'바람/감기',lv:7},
+  {w:'すずしい',r:'suzushii',m:'시원하다',lv:3},{w:'こおり',r:'koori',m:'얼음',lv:9},
+  {w:'きょう',r:'kyou',m:'오늘',lv:8},{w:'こんや',r:'konya',m:'오늘 밤',lv:8},
+  // ── 색깔/형용사 ──────────────────────────────────────────────────
+  {w:'しろ',r:'shiro',m:'하양',lv:9},{w:'くろ',r:'kuro',m:'검정',lv:9},
+  {w:'きいろ',r:'kiiro',m:'노랑',lv:9},{w:'みどり',r:'midori',m:'초록',lv:9},
+  {w:'ちいさい',r:'chiisai',m:'작다',lv:3},{w:'たかい',r:'takai',m:'비싸다/높다',lv:2},
+  {w:'ひくい',r:'hikui',m:'낮다',lv:6},{w:'おおきな',r:'ookina',m:'큰',lv:5},
+  {w:'あたらしい',r:'atarashii',m:'새롭다',lv:9},{w:'ふるい',r:'furui',m:'오래된',lv:9},
+  // ── 신체/건강 ────────────────────────────────────────────────────
+  {w:'あたま',r:'atama',m:'머리',lv:7},{w:'みみ',r:'mimi',m:'귀',lv:7},
+  {w:'くち',r:'kuchi',m:'입',lv:4},{w:'あし',r:'ashi',m:'발/다리',lv:3},
+  {w:'からだ',r:'karada',m:'몸',lv:9},{w:'くすり',r:'kusuri',m:'약',lv:3},
+  {w:'ねる',r:'neru',m:'자다',lv:5},{w:'おきる',r:'okiru',m:'일어나다',lv:9},
+  {w:'びょういん',r:'byouin',m:'병원',lv:8},
+  // ── 가족/인물 ────────────────────────────────────────────────────
+  {w:'そふ',r:'sofu',m:'할아버지',lv:6},{w:'そぼ',r:'sobo',m:'할머니',lv:6},
+  {w:'あに',r:'ani',m:'형/오빠',lv:5},{w:'あね',r:'ane',m:'누나/언니',lv:5},
+  {w:'いもうと',r:'imouto',m:'여동생',lv:4},{w:'こども',r:'kodomo',m:'어린이',lv:7},
+  {w:'おとな',r:'otona',m:'어른',lv:5},{w:'ともだち',r:'tomodachi',m:'친구',lv:4},
+  {w:'がくせい',r:'gakusei',m:'학생',lv:2},
+  // ── 동작/동사 ────────────────────────────────────────────────────
+  {w:'みる',r:'miru',m:'보다',lv:9},{w:'かう',r:'kau',m:'사다',lv:1},
+  {w:'きる',r:'kiru',m:'입다',lv:9},{w:'のむ',r:'nomu',m:'마시다',lv:7},
+  {w:'ならう',r:'narau',m:'배우다',lv:9},{w:'いく',r:'iku',m:'가다',lv:1},
+  {w:'すわる',r:'suwaru',m:'앉다',lv:9},{w:'やすむ',r:'yasumu',m:'쉬다',lv:7},
+  {w:'あそぶ',r:'asobu',m:'놀다',lv:6},{w:'つかう',r:'tsukau',m:'사용하다',lv:1},
+  {w:'おしえる',r:'oshieru',m:'가르치다',lv:9},{w:'うる',r:'uru',m:'팔다',lv:9},
+  // ── 물건/쇼핑 ────────────────────────────────────────────────────
+  {w:'ふくろ',r:'fukuro',m:'봉투',lv:9},{w:'かばん',r:'kaban',m:'가방',lv:6},
+  {w:'くつ',r:'kutsu',m:'신발',lv:4},{w:'くつした',r:'kutsushita',m:'양말',lv:4},
+  {w:'きもの',r:'kimono',m:'기모노',lv:7},{w:'めがね',r:'megane',m:'안경',lv:8},
+  // ── 문화/엔터 ──────────────────────────────────────────────────
+  {w:'まつり',r:'matsuri',m:'축제',lv:9},{w:'えいが',r:'eiga',m:'영화',lv:2},
+  {w:'おんがく',r:'ongaku',m:'음악',lv:5},{w:'しごと',r:'shigoto',m:'일/직업',lv:4},
+  {w:'かいしゃ',r:'kaisha',m:'회사',lv:3},{w:'しゃしん',r:'shashin',m:'사진',lv:3},
+  {w:'しょうがっこう',r:'shougakkou',m:'초등학교',lv:7},
+];
+
+const CHAR_LV = {};
+LEVELS.forEach(l => l.chars.forEach(([c]) => { CHAR_LV[c] = l.id; }));
+
+// ═══════════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════════
+
+const state = {
+  screen: 'scriptPick', // scriptPick|kanaHome|level|mixSelect|wordSelect|quiz|wordFlash|result
+  script: 'hira', // hira|kata
+  levelId: null,
+  progress: {},
+  quiz: null,
+  wordFlash: null,
+};
+
+let mixSelected = [], mixSkill = 'read', mixCount = 20;
+let homeTab = 'basic';
+let mixOpen = new Set(); // 아코디언 열린 섹션
+let wordSelected = [];
+let quizAnswered = false, recognition = null, micListening = false;
+let wrongNotes = {};
+let notesTab = 'all';
+
+function loadNotes() {
+  try { const s=localStorage.getItem('hiragana_notes'); wrongNotes=s?JSON.parse(s):{}; } catch(e){wrongNotes={};}
+}
+function saveNotes() { localStorage.setItem('hiragana_notes',JSON.stringify(wrongNotes)); }
+function isNoted(cur) { const n=wrongNotes[cur.char]; return n&&(n.bookmarked||n.count>0); }
+function addWrong(cur) {
+  const key=cur.char, kind=cur.type==='word'?'word':'char';
+  if(!wrongNotes[key]) wrongNotes[key]={char:cur.char,romaji:cur.romaji,meaning:cur.meaning||'',kind,count:0,bookmarked:false};
+  wrongNotes[key].count++;
+  saveNotes();
+}
+function toggleNote() {
+  const cur=state.quiz?.questions[state.quiz.current]; if(!cur) return;
+  const key=cur.char, kind=cur.type==='word'?'word':'char';
+  if(!wrongNotes[key]) wrongNotes[key]={char:cur.char,romaji:cur.romaji,meaning:cur.meaning||'',kind,count:0,bookmarked:true};
+  else wrongNotes[key].bookmarked=!wrongNotes[key].bookmarked;
+  if(!wrongNotes[key].bookmarked&&wrongNotes[key].count===0) delete wrongNotes[key];
+  saveNotes();
+  const btn=document.getElementById('note-btn');
+  if(btn){const noted=isNoted(cur);btn.textContent=noted?'★':'☆';btn.className='note-btn'+(noted?' noted':'');}
+}
+function deleteNote(key) { delete wrongNotes[key]; saveNotes(); renderNotes(); }
+function clearAllNotes() { if(confirm('오답노트를 모두 삭제할까요?')){wrongNotes={};saveNotes();renderNotes();} }
+
+function initProgress() {
+  const p = {};
+  ALL_LEVELS.forEach(l => { p[l.id] = { unlocked: true, read: -1, write: -1, speak: -1 }; });
+  return p;
+}
+
+function loadState() {
+  try {
+    const saved = localStorage.getItem('hiragana_progress');
+    state.progress = saved ? JSON.parse(saved) : initProgress();
+  } catch(e) { state.progress = initProgress(); }
+  ALL_LEVELS.forEach(l => {
+    if (!state.progress[l.id]) state.progress[l.id] = { unlocked: true, read: -1, write: -1, speak: -1 };
+    else state.progress[l.id].unlocked = true;
+  });
+}
+
+function saveState() { localStorage.setItem('hiragana_progress', JSON.stringify(state.progress)); }
+
+// ═══════════════════════════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════════════════════════
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+  return a;
+}
+
+// 모든 항목 최소 1번, 연속 중복 방지
+function buildPool(items, count) {
+  if (!items.length) return [];
+  const result = [];
+  while (result.length < count) {
+    const round = shuffle([...items]);
+    if (result.length > 0 && round.length > 1) {
+      const prevKey = JSON.stringify(result[result.length - 1]);
+      if (JSON.stringify(round[0]) === prevKey) [round[0], round[1]] = [round[1], round[0]];
+    }
+    result.push(...round.slice(0, count - result.length));
+  }
+  return result;
+}
+
+function katakanaToHiragana(s) { return s.replace(/[ァ-ヶ]/g, c => String.fromCharCode(c.charCodeAt(0)-0x60)); }
+function pct(v) { return v < 0 ? '―' : v + '%'; }
+function esc(s) { return String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
+function charSize(s) { const n=[...s].length; return n<=2?'80px':n<=4?'60px':'44px'; }
+
+// 히라가나 → 한국어 발음
+const CHAR_KO = {
+  'あ':'아','い':'이','う':'우','え':'에','お':'오',
+  'か':'카','き':'키','く':'쿠','け':'케','こ':'코',
+  'さ':'사','し':'시','す':'수','せ':'세','そ':'소',
+  'た':'타','ち':'치','つ':'츠','て':'테','と':'토',
+  'な':'나','に':'니','ぬ':'누','ね':'네','の':'노',
+  'は':'하','ひ':'히','ふ':'후','へ':'헤','ほ':'호',
+  'ま':'마','み':'미','む':'무','め':'메','も':'모',
+  'や':'야','ゆ':'유','よ':'요',
+  'ら':'라','り':'리','る':'루','れ':'레','ろ':'로',
+  'わ':'와','を':'오','ん':'응',
+  // 탁음
+  'が':'가','ぎ':'기','ぐ':'구','げ':'게','ご':'고',
+  'ざ':'자','じ':'지','ず':'즈','ぜ':'제','ぞ':'조',
+  'だ':'다','ぢ':'지','づ':'즈','で':'데','ど':'도',
+  'ば':'바','び':'비','ぶ':'부','べ':'베','ぼ':'보',
+  'ぱ':'파','ぴ':'피','ぷ':'푸','ぺ':'페','ぽ':'포',
+  // 요음
+  'きゃ':'캬','きゅ':'큐','きょ':'쿄',
+  'しゃ':'샤','しゅ':'슈','しょ':'쇼',
+  'ちゃ':'챠','ちゅ':'츄','ちょ':'쵸',
+  'にゃ':'냐','にゅ':'뉴','にょ':'뇨',
+  'ひゃ':'햐','ひゅ':'휴','ひょ':'효',
+  'みゃ':'먀','みゅ':'뮤','みょ':'묘',
+  'りゃ':'랴','りゅ':'류','りょ':'료',
+  'ぎゃ':'갸','ぎゅ':'규','ぎょ':'교',
+  'じゃ':'자','じゅ':'주','じょ':'조',
+  'びゃ':'뱌','びゅ':'뷰','びょ':'뵤',
+  'ぴゃ':'퍄','ぴゅ':'퓨','ぴょ':'표',
+};
+const ROMAJI_KO = {
+  'a':'아','i':'이','u':'우','e':'에','o':'오',
+  'ka':'카','ki':'키','ku':'쿠','ke':'케','ko':'코',
+  'sa':'사','shi':'시','su':'수','se':'세','so':'소',
+  'ta':'타','chi':'치','tsu':'츠','te':'테','to':'토',
+  'na':'나','ni':'니','nu':'누','ne':'네','no':'노',
+  'ha':'하','hi':'히','fu':'후','he':'헤','ho':'호',
+  'ma':'마','mi':'미','mu':'무','me':'메','mo':'모',
+  'ya':'야','yu':'유','yo':'요',
+  'ra':'라','ri':'리','ru':'루','re':'레','ro':'로',
+  'wa':'와','wo':'오','n':'응',
+  'ga':'가','gi':'기','gu':'구','ge':'게','go':'고',
+  'za':'자','ji':'지','zu':'즈','ze':'제','zo':'조',
+  'da':'다','di':'지','du':'즈','de':'데','do':'도',
+  'ba':'바','bi':'비','bu':'부','be':'베','bo':'보',
+  'pa':'파','pi':'피','pu':'푸','pe':'페','po':'포',
+  'kya':'캬','kyu':'큐','kyo':'쿄',
+  'sha':'샤','shu':'슈','sho':'쇼',
+  'cha':'챠','chu':'츄','cho':'쵸',
+  'nya':'냐','nyu':'뉴','nyo':'뇨',
+  'hya':'햐','hyu':'휴','hyo':'효',
+  'mya':'먀','myu':'뮤','myo':'묘',
+  'rya':'랴','ryu':'류','ryo':'료',
+  'gya':'갸','gyu':'규','gyo':'교',
+  'ja':'자','ju':'주','jo':'조',
+  'bya':'뱌','byu':'뷰','byo':'뵤',
+  'pya':'퍄','pyu':'퓨','pyo':'표',
+};
+function charToKo(s) {
+  const chars=[...katakanaToHiragana(s)];
+  let out='';
+  for (let i=0;i<chars.length;i++) {
+    const pair=chars[i]+(chars[i+1]||'');
+    if (CHAR_KO[pair]) { out+=CHAR_KO[pair]; i++; }
+    else out+=CHAR_KO[chars[i]]||chars[i];
+  }
+  return out;
+}
+function fmtR(romaji, char, html=false) {
+  const ko = char ? charToKo(char) : (ROMAJI_KO[romaji]||'');
+  if (!ko || ko===char) return romaji;
+  if (html) return `${romaji}<br><small style="font-weight:normal;font-size:0.72em;opacity:0.7">${ko}</small>`;
+  return `${romaji}, ${ko}`;
+}
+
+// 각 히라가나 획 시작점 [x%, y%, 방향deg] (0=→ 90=↓ 180=← 270=↑ 45=↘ 135=↙ 225=↖ 315=↗)
+const STROKE_GUIDE = {
+  'あ':[[.50,.18,0],[.22,.52,270],[.58,.38,135]],
+  'い':[[.30,.22,135],[.68,.22,135]],
+  'う':[[.50,.14,0],[.38,.40,90]],
+  'え':[[.50,.20,0],[.50,.30,90],[.22,.58,0],[.72,.55,225]],
+  'お':[[.50,.20,0],[.28,.40,90],[.72,.52,225]],
+  'か':[[.22,.22,90],[.50,.22,0],[.65,.28,225]],
+  'き':[[.22,.25,0],[.22,.52,0],[.62,.25,90],[.50,.52,0]],
+  'く':[[.72,.30,225]],
+  'け':[[.28,.18,90],[.58,.18,90],[.75,.58,225]],
+  'こ':[[.22,.30,0],[.22,.62,0]],
+  'さ':[[.50,.18,0],[.20,.45,0],[.62,.45,225]],
+  'し':[[.60,.18,90]],
+  'す':[[.50,.18,0],[.22,.42,0],[.50,.42,225]],
+  'せ':[[.28,.18,90],[.28,.45,0],[.55,.18,90]],
+  'そ':[[.25,.20,0],[.35,.48,315]],
+  'た':[[.38,.18,90],[.65,.18,90],[.22,.48,0],[.38,.48,225]],
+  'ち':[[.50,.18,0],[.22,.45,0],[.38,.65,315]],
+  'つ':[[.28,.30,0]],
+  'て':[[.50,.18,0],[.22,.45,90]],
+  'と':[[.45,.18,90],[.28,.55,315]],
+  'な':[[.22,.28,0],[.50,.18,90],[.50,.45,0],[.65,.55,225]],
+  'に':[[.28,.18,90],[.55,.18,90],[.28,.58,0]],
+  'ぬ':[[.30,.18,90],[.30,.42,0],[.58,.18,90],[.68,.55,225]],
+  'ね':[[.50,.18,0],[.22,.42,90],[.55,.42,0],[.55,.65,315]],
+  'の':[[.55,.22,135]],
+  'は':[[.25,.18,90],[.55,.18,90],[.68,.42,225]],
+  'ひ':[[.30,.22,90],[.65,.22,225]],
+  'ふ':[[.50,.15,0],[.22,.38,45],[.55,.42,270],[.55,.62,315]],
+  'へ':[[.18,.48,315]],
+  'ほ':[[.28,.18,90],[.50,.18,0],[.28,.52,0],[.62,.52,225]],
+  'ま':[[.22,.28,0],[.22,.52,0],[.55,.28,90]],
+  'み':[[.22,.25,90],[.55,.25,90],[.38,.58,315]],
+  'む':[[.50,.18,0],[.22,.48,0],[.62,.58,225]],
+  'め':[[.22,.38,0],[.62,.25,225]],
+  'も':[[.50,.18,0],[.22,.38,90],[.22,.60,0]],
+  'や':[[.28,.25,90],[.65,.25,225],[.28,.65,0]],
+  'ゆ':[[.22,.25,90],[.55,.30,225]],
+  'よ':[[.58,.18,0],[.22,.48,0],[.22,.65,0]],
+  'ら':[[.55,.18,0],[.42,.48,225]],
+  'り':[[.30,.22,135],[.65,.22,135]],
+  'る':[[.50,.22,0],[.38,.52,315]],
+  'れ':[[.28,.18,90],[.28,.48,0],[.62,.48,225]],
+  'ろ':[[.25,.30,0],[.38,.58,315]],
+  'わ':[[.28,.22,90],[.65,.22,225]],
+  'を':[[.50,.18,0],[.22,.38,90],[.22,.62,0]],
+  'ん':[[.50,.25,315]],
+};
+
+let drawCtx=null, isDrawing=false, lastX=0, lastY=0;
+
+function getPos(canvas, e) {
+  const r=canvas.getBoundingClientRect();
+  return { x:(e.clientX-r.left)*canvas.width/r.width, y:(e.clientY-r.top)*canvas.height/r.height };
+}
+
+function initDrawCanvas(char, practice) {
+  const c=document.getElementById('draw-canvas'); if(!c) return;
+  const w=c.width, h=c.height;
+  drawCtx=c.getContext('2d');
+  drawCtx.clearRect(0,0,w,h);
+  // 그리드
+  drawCtx.save();
+  drawCtx.strokeStyle='#e2e8f0'; drawCtx.lineWidth=1; drawCtx.setLineDash([4,4]);
+  drawCtx.beginPath(); drawCtx.moveTo(w/2,0); drawCtx.lineTo(w/2,h); drawCtx.moveTo(0,h/2); drawCtx.lineTo(w,h/2); drawCtx.stroke();
+  drawCtx.setLineDash([]); drawCtx.restore();
+
+  if (practice) {
+    // 반투명 글자 배경
+    drawCtx.save();
+    drawCtx.globalAlpha=0.10; drawCtx.fillStyle='#334155';
+    drawCtx.font=`${w*0.76}px 'Hiragino Sans','Yu Gothic','Noto Sans JP',sans-serif`; drawCtx.textAlign='center'; drawCtx.textBaseline='middle';
+    drawCtx.fillText(char, w/2, h/2+h*0.03);
+    drawCtx.restore();
+    // 획 순서 가이드
+    const BASE_MAP={'が':'か','ぎ':'き','ぐ':'く','げ':'け','ご':'こ','ざ':'さ','じ':'し','ず':'す','ぜ':'せ','ぞ':'そ','だ':'た','ぢ':'ち','づ':'つ','で':'て','ど':'と','ば':'は','び':'ひ','ぶ':'ふ','べ':'へ','ぼ':'ほ','ぱ':'は','ぴ':'ひ','ぷ':'ふ','ぺ':'へ','ぽ':'ほ'};
+    const guide=STROKE_GUIDE[char]||STROKE_GUIDE[BASE_MAP[char]]; if(guide) guide.forEach(([xp,yp,ang],i)=>{
+      const x=xp*w, y=yp*h;
+      drawCtx.save();
+      // 원
+      drawCtx.fillStyle='#2563eb'; drawCtx.beginPath(); drawCtx.arc(x,y,11,0,Math.PI*2); drawCtx.fill();
+      drawCtx.fillStyle='#fff'; drawCtx.font='bold 11px sans-serif'; drawCtx.textAlign='center'; drawCtx.textBaseline='middle';
+      drawCtx.fillText(i+1,x,y);
+      // 화살표
+      if(ang!==undefined){
+        const rad=ang*Math.PI/180, len=20;
+        const ax=x+Math.cos(rad)*len, ay=y+Math.sin(rad)*len;
+        drawCtx.strokeStyle='#2563eb'; drawCtx.lineWidth=2; drawCtx.beginPath();
+        drawCtx.moveTo(x,y); drawCtx.lineTo(ax,ay);
+        const al=7, aa=0.45;
+        drawCtx.lineTo(ax-al*Math.cos(rad-aa),ay-al*Math.sin(rad-aa));
+        drawCtx.moveTo(ax,ay);
+        drawCtx.lineTo(ax-al*Math.cos(rad+aa),ay-al*Math.sin(rad+aa));
+        drawCtx.stroke();
+      }
+      drawCtx.restore();
+    });
+  }
+
+  const pen = (x1,y1,x2,y2) => {
+    drawCtx.strokeStyle='#1e293b'; drawCtx.lineWidth=4; drawCtx.lineCap='round'; drawCtx.lineJoin='round';
+    drawCtx.beginPath(); drawCtx.moveTo(x1,y1); drawCtx.lineTo(x2,y2); drawCtx.stroke();
+  };
+  c.onmousedown=e=>{isDrawing=true;const p=getPos(c,e);lastX=p.x;lastY=p.y;};
+  c.onmousemove=e=>{if(!isDrawing)return;const p=getPos(c,e);pen(lastX,lastY,p.x,p.y);lastX=p.x;lastY=p.y;};
+  c.onmouseup=c.onmouseleave=()=>{isDrawing=false;};
+  c.ontouchstart=e=>{e.preventDefault();isDrawing=true;const p=getPos(c,e.touches[0]);lastX=p.x;lastY=p.y;};
+  c.ontouchmove=e=>{e.preventDefault();if(!isDrawing)return;const p=getPos(c,e.touches[0]);pen(lastX,lastY,p.x,p.y);lastX=p.x;lastY=p.y;};
+  c.ontouchend=()=>{isDrawing=false;};
+}
+
+function clearCanvas() {
+  const cur=state.quiz?.questions[state.quiz.current]; if(!cur) return;
+  initDrawCanvas(cur.char,!!state.quiz.isPracticeWrite);
+}
+
+function checkDraw(char) {
+  if(!drawCtx) return;
+  const c=document.getElementById('draw-canvas');
+  drawCtx.save();
+  drawCtx.globalAlpha=0.28; drawCtx.fillStyle='#dc2626';
+  drawCtx.font=`${c.width*0.76}px 'Hiragino Sans','Yu Gothic','Noto Sans JP',sans-serif`; drawCtx.textAlign='center'; drawCtx.textBaseline='middle';
+  drawCtx.fillText(char,c.width/2,c.height/2+c.height*0.03);
+  drawCtx.restore();
+  const d=document.getElementById('draw-btns'); if(!d) return;
+  d.innerHTML=`<div style="text-align:center;font-size:13px;color:var(--text-sub);margin-bottom:6px">빨간 글자와 비교해보세요</div>
+    <div style="display:flex;gap:8px;width:100%">
+      <button class="btn btn-success" style="flex:1" onclick="judgeDraw(true)">✓ 맞아요</button>
+      <button class="btn btn-danger" style="flex:1" onclick="judgeDraw(false)">✗ 틀렸어요</button>
+    </div>`;
+}
+
+function judgeDraw(correct) {
+  if(quizAnswered) return; quizAnswered=true;
+  const cur=state.quiz.questions[state.quiz.current];
+  if(correct) state.quiz.score++; else addWrong(cur);
+  state.quiz.answers.push(correct);
+  speakNow(cur.char);
+  const fb=document.getElementById('fb');
+  if(fb){fb.textContent=correct?'✓ 정답!':'✗ 오답 — 정답: '+cur.char;fb.className='feedback-area '+(correct?'feedback-correct':'feedback-wrong');}
+  const d=document.getElementById('draw-btns'); if(d) d.innerHTML='';
+  const nxt=document.getElementById('nxt'); if(nxt) nxt.style.display='block';
+}
+
+function speak(text) {
+  if (!window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'ja-JP';
+  u.rate = 0.9;
+  window.speechSynthesis.speak(u);
+}
+
+function speakNow(text) {
+  if (!window.speechSynthesis) return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'ja-JP';
+  u.rate = 1.0;
+  requestAnimationFrame(() => speechSynthesis.speak(u));
+}
+
+function speakCurrent() {
+  if (state.screen === 'quiz' && state.quiz) {
+    const cur = state.quiz.questions[state.quiz.current];
+    if (cur) speak(cur.char);
+  } else if (state.screen === 'wordFlash' && state.wordFlash) {
+    const w = state.wordFlash.words[state.wordFlash.current];
+    if (w) speak(w.w);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// QUIZ GENERATORS
+// ═══════════════════════════════════════════════════════════════
+
+function mkReadQ(lvId, count) {
+  const lv = ALL_LEVELS.find(l => l.id === lvId);
+  const allChars = ALL_LEVELS.filter(l => l.script===lv.script).flatMap(l => l.chars);
+  return buildPool(lv.chars, count || lv.chars.length * 2).map(([char, romaji]) => ({
+    type:'read', char, romaji, answer:romaji,
+    choices: shuffle([romaji, ...shuffle(allChars.filter(([,r])=>r!==romaji)).slice(0,3).map(([,r])=>r)]),
+  }));
+}
+
+function mkWriteQ(lvId, count) {
+  const lv = ALL_LEVELS.find(l => l.id === lvId);
+  const allChars = ALL_LEVELS.filter(l => l.script===lv.script).flatMap(l => l.chars);
+  return buildPool(lv.chars, count || lv.chars.length * 2).map(([char, romaji]) => ({
+    type:'write', char, romaji, answer:char,
+    choices: shuffle([char, ...shuffle(allChars.filter(([c])=>c!==char)).slice(0,5).map(([c])=>c)]),
+  }));
+}
+
+function mkSpeakQ(lvId) {
+  const lv = ALL_LEVELS.find(l => l.id === lvId);
+  return shuffle(lv.chars).map(([char,romaji]) => ({type:'speak',char,romaji,answer:char}));
+}
+
+function mkWordQ(maxLvId) {
+  const avail = WORDS.filter(w => w.lv <= maxLvId);
+  if (!avail.length) return [];
+  return shuffle(avail);
+}
+
+function mkMixReadQ(ids, count) {
+  const chars = ALL_LEVELS.filter(l => ids.includes(l.id)).flatMap(l => l.chars);
+  const allR = chars.map(([,r])=>r);
+  return buildPool(chars, count).map(([char,romaji]) => ({
+    type:'read', char, romaji, answer:romaji,
+    choices: shuffle([romaji, ...shuffle(allR.filter(r=>r!==romaji)).slice(0,3)]),
+  }));
+}
+
+function mkMixWriteQ(ids, count) {
+  const chars = ALL_LEVELS.filter(l => ids.includes(l.id)).flatMap(l => l.chars);
+  const allC = chars.map(([c])=>c);
+  return buildPool(chars, count).map(([char,romaji]) => ({
+    type:'write', char, romaji, answer:char,
+    choices: shuffle([char, ...shuffle(allC.filter(c=>c!==char)).slice(0,5)]),
+  }));
+}
+
+function mkMixSpeakQ(ids, count) {
+  const chars = ALL_LEVELS.filter(l => ids.includes(l.id)).flatMap(l => l.chars);
+  return buildPool(chars, count).map(([char,romaji]) => ({type:'speak',char,romaji,answer:char}));
+}
+
+function mkReadTypeQ(lvId, count) {
+  const lv = ALL_LEVELS.find(l=>l.id===lvId);
+  return buildPool(lv.chars, count||lv.chars.length*2).map(([char,romaji])=>({type:'readType',char,romaji,answer:romaji}));
+}
+function mkMixReadTypeQ(ids, count) {
+  const chars = ALL_LEVELS.filter(l=>ids.includes(l.id)).flatMap(l=>l.chars);
+  return buildPool(chars, count).map(([char,romaji])=>({type:'readType',char,romaji,answer:romaji}));
+}
+
+function mkMixWordTypeQ(ids, count) {
+  const charSet = new Set(ALL_LEVELS.filter(l=>ids.includes(l.id)).flatMap(l=>l.chars.map(([c])=>c)));
+  const avail = WORDS.filter(w => [...w.w].every(ch => charSet.has(ch)));
+  if (!avail.length) return null;
+  const pool = buildPool(avail.map(w=>[w.w,w.r,w.m]), count||avail.length);
+  return pool.map(([cw,cr,cm]) => ({type:'wordType', char:cw, romaji:cr, meaning:cm, answer:cr}));
+}
+
+function mkMixWordQ(ids, count) {
+  const charSet = new Set(ALL_LEVELS.filter(l=>ids.includes(l.id)).flatMap(l=>l.chars.map(([c])=>c)));
+  const avail = WORDS.filter(w => [...w.w].every(ch => charSet.has(ch)));
+  if (!avail.length) return null;
+  const allR = avail.map(w=>w.r);
+  const pool = buildPool(avail.map(w=>[w.w,w.r,w.m]), count||avail.length);
+  return pool.map(([cw,cr,cm]) => ({
+    type:'word', char:cw, romaji:cr, meaning:cm, answer:cr,
+    choices: shuffle([cr, ...shuffle(allR.filter(r=>r!==cr)).slice(0,3)]),
+  }));
+}
+
+// ═══════════════════════════════════════════════════════════════
+// RENDER MAIN
+// ═══════════════════════════════════════════════════════════════
+
+const app = document.getElementById('app');
+
+function render() {
+  const s = state.screen;
+  if (s==='scriptPick') renderScriptPick();
+  else if (s==='kanaHome') renderKanaHome();
+  else if (s==='level') renderLevel();
+  else if (s==='readFlash') renderReadFlash();
+  else if (s==='mixSelect') renderMixSelect();
+  else if (s==='wordSelect') renderWordSelect();
+  else if (s==='quiz') renderQuiz();
+  else if (s==='wordFlash') renderWordFlash();
+  else if (s==='result') renderResult();
+  else if (s==='notes') renderNotes();
+}
+
+// ── 문자 선택 (히라가나/카타카나) ──────────────────────────────
+function renderScriptPick() {
+  const mkScriptCard = (id, rep, label, sub) => `
+    <div class="level-card unlocked" style="text-align:center;padding:28px 14px" onclick="goScript('${id}')">
+      <div class="lv-rep jp" style="font-size:48px">${rep}</div>
+      <div class="lv-name" style="font-size:16px;font-weight:700;margin-top:6px">${label}</div>
+      <div class="lv-name" style="font-size:12px;margin-top:2px">${sub}</div>
+    </div>`;
+  app.innerHTML = `
+    <div class="header"><div class="header-spacer"></div><div class="header-title">🇯🇵 가나 학습</div><div class="header-spacer"></div></div>
+    <div class="home-body">
+      <div style="display:flex;flex-direction:column;gap:12px">
+        ${mkScriptCard('hira','あ','히라가나','기본음 · 탁음 · 반탁음 · 요음')}
+        ${mkScriptCard('kata','ア','카타카나','기본음 · 탁음 · 반탁음 · 요음')}
+      </div>
+      <div class="home-actions" style="margin-top:20px">
+        <button class="btn btn-secondary" onclick="goNotes()">📝 오답노트</button>
+      </div>
+    </div>`;
+}
+function goScript(s) { state.script=s; state.screen='kanaHome'; render(); }
+function goScriptPick() { state.screen='scriptPick'; render(); }
+
+// ── 홈 (기본음/탁음/반탁음/요음) ───────────────────────────────
+function setHomeTab(t) { homeTab=t; renderKanaHome(); }
+
+function renderKanaHome() {
+  const sc = SCRIPTS[state.script];
+  const TAB_DEFS = [
+    {id:'basic',      label:'기본음', levels:sc.basic},
+    {id:'dakuten',    label:'탁음',   levels:sc.dakuten},
+    {id:'handakuten', label:'반탁음', levels:sc.handakuten},
+    {id:'youon',      label:'요음',   levels:sc.youon},
+  ];
+  const cur = TAB_DEFS.find(t=>t.id===homeTab)||TAB_DEFS[0];
+  const mkCard = (l) => {
+    const p = state.progress[l.id] || {};
+    const b = (label,score) => `<span class="badge ${score<0?'badge-none':score>=80?'badge-done':'badge-partial'}">${score<0?label:label+' '+score+'%'}</span>`;
+    const num = l.group==='dakuten'?'탁음':l.group==='handakuten'?'반탁음':l.group==='youon'?'요음':'LV'+l.id;
+    return `<div class="level-card unlocked" onclick="goLevel(${l.id})">
+      <div class="lv-num">${num}</div>
+      <div class="lv-rep jp">${l.chars[0][0]}</div>
+      <div class="lv-name">${l.name}</div>
+      <div class="lv-badges">${b('読',p.read??-1)}${b('書',p.write??-1)}${b('話',p.speak??-1)}</div>
+    </div>`;
+  };
+  const tabBtns = TAB_DEFS.map(t=>`<button class="skill-tab ${homeTab===t.id?'active':''}" onclick="setHomeTab('${t.id}')">${t.label}</button>`).join('');
+  const hiraOnlyActions = state.script==='hira' ? `
+        <button class="btn btn-primary" onclick="goMixSelect()">🎯 전체 테스트</button>
+        <button class="btn btn-secondary" onclick="goWordSelect()">📖 단어 연습</button>` : '';
+  app.innerHTML = `
+    <div class="header"><button class="back-btn" onclick="goScriptPick()">‹</button><div class="header-title">🇯🇵 ${sc.label} 학습</div><div class="header-spacer"></div></div>
+    <div class="home-body">
+      <div class="skill-tabs" style="margin-bottom:12px">${tabBtns}</div>
+      <div class="level-grid">${cur.levels.map(mkCard).join('')}</div>
+      <div class="home-actions">
+        ${hiraOnlyActions}
+        <button class="btn btn-secondary" onclick="goNotes()">📝 오답노트</button>
+      </div>
+    </div>`;
+}
+
+// ── 읽기 연습 (플래시카드) ──────────────────────────────────────
+function startReadFlash(lvId) {
+  const lv = ALL_LEVELS.find(l=>l.id===lvId);
+  state.readFlash = { chars:[...lv.chars], current:0, lvId };
+  state.screen='readFlash'; render();
+}
+function rfMove(d) {
+  const rf=state.readFlash;
+  if (d>0 && rf.current>=rf.chars.length-1) { goLevel(rf.lvId); return; }
+  rf.current = Math.max(0, rf.current+d);
+  renderReadFlash();
+}
+function renderReadFlash() {
+  const rf=state.readFlash;
+  const [char,romaji]=rf.chars[rf.current];
+  const total=rf.chars.length;
+  const lv=ALL_LEVELS.find(l=>l.id===rf.lvId);
+  const pbar=(rf.current+1)/total*100;
+  app.innerHTML=`
+    <div class="header"><button class="back-btn" onclick="goLevel(${rf.lvId})">‹</button><div class="header-title">${lv.name} · 읽기 연습</div><div class="header-right"><button class="speak-btn" onclick="speak('${esc(char)}')">🔊</button></div></div>
+    <div class="quiz-screen">
+      <div class="progress-bar-container"><div class="progress-bar-fill" style="width:${pbar}%"></div></div>
+      <div class="quiz-body">
+        <div class="quiz-counter">${rf.current+1} / ${total}</div>
+        <div class="read-flash-card" onclick="rfMove(1)">
+          <div class="rf-char jp" style="font-size:${charSize(char)}">${char}</div>
+          <div class="rf-reading">${fmtR(romaji, char)}</div>
+          <div class="rf-tap-hint">탭하면 다음 →</div>
+        </div>
+        <div class="next-wrap" style="display:flex;gap:10px">
+          <button class="btn btn-secondary" style="flex:1" ${rf.current===0?'disabled':''} onclick="rfMove(-1)">← 이전</button>
+          <button class="btn btn-primary" style="flex:1" onclick="rfMove(1)">${rf.current===total-1?'완료 ✓':'다음 →'}</button>
+        </div>
+      </div>
+    </div>`;
+  speak(char);
+}
+
+// ── 레벨 상세 ──────────────────────────────────────────────────
+function renderLevel() {
+  const l = ALL_LEVELS.find(l=>l.id===state.levelId);
+  const p = state.progress[l.id]||{};
+  const charCards = l.chars.map(([c,r]) => `<div class="char-card"><div class="jp-char jp">${c}</div><div class="ro-char">${fmtR(r, c)}</div></div>`).join('');
+  const readRow = `
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <button class="skill-btn" onclick="startReadFlash(${l.id})">📖 읽기 연습 (보기)</button>
+      <div class="skill-row" style="gap:6px">
+        <button class="skill-btn" style="flex:1;font-size:14px" onclick="startLvQuiz(${l.id},'read')">LV1 객관식</button>
+        <button class="skill-btn" style="flex:1;font-size:14px" onclick="startLvQuiz(${l.id},'readType')">LV2 주관식</button>
+        <span class="skill-score ${(p.read??-1)>=80?'good':''}">${pct(p.read??-1)}</span>
+      </div>
+    </div>`;
+  const writeRow = `
+    <div class="skill-row">
+      <button class="skill-btn" onclick="startLvQuiz(${l.id},'writePractice')" style="flex:1;margin-right:4px">✏️ 쓰기 연습</button>
+      <button class="skill-btn" onclick="startLvQuiz(${l.id},'write')" style="flex:1;margin-left:4px">📝 쓰기 테스트</button>
+      <span class="skill-score ${(p.write??-1)>=80?'good':''}">${pct(p.write??-1)}</span>
+    </div>`;
+  const row = (key,emoji,label) => `
+    <div class="skill-row">
+      <button class="skill-btn" onclick="startLvQuiz(${l.id},'${key}')">${emoji} ${label}</button>
+      <span class="skill-score ${(p[key]??-1)>=80?'good':''}">${pct(p[key]??-1)}</span>
+    </div>`;
+  app.innerHTML = `
+    <div class="header"><button class="back-btn" onclick="goHome()">‹</button><div class="header-title">LEVEL ${l.id} · ${l.name}</div><div class="header-spacer"></div></div>
+    <div class="lv-detail">
+      <div class="char-grid">${charCards}</div>
+      <div class="skill-buttons">${readRow}${writeRow}${row('speak','🎤','말하기')}</div>
+    </div>`;
+}
+
+// ── 믹스 선택 ──────────────────────────────────────────────────
+function toggleAccordion(g) { mixOpen.has(g)?mixOpen.delete(g):mixOpen.add(g); renderMixSelect(); }
+
+function renderMixSelect() {
+  const mkItems = (lvArr) => lvArr.map(l => {
+    const sel = mixSelected.includes(l.id);
+    const preview = l.chars.slice(0,3).map(([c])=>c).join('');
+    return `<div class="check-item ${sel?'selected':''}" onclick="toggleMix(${l.id})">
+      <input type="checkbox" ${sel?'checked':''} onclick="event.stopPropagation();toggleMix(${l.id})">
+      <span class="check-item-label">${l.name}</span>
+      <span class="check-item-chars jp">${preview}${l.chars.length>3?'…':''}</span>
+    </div>`;
+  }).join('');
+
+  const mkSection = (g, title, lvArr) => {
+    const open = mixOpen.has(g);
+    const selCount = lvArr.filter(l=>mixSelected.includes(l.id)).length;
+    const badge = selCount>0?`<span style="background:var(--accent);color:#fff;border-radius:10px;padding:1px 7px;font-size:11px">${selCount}/${lvArr.length}</span>`:'';
+    return `
+      <div class="accordion-header" onclick="toggleAccordion('${g}')">
+        <span class="accordion-title">${title}</span>
+        <span class="accordion-meta">
+          ${badge}
+          <button style="font-size:11px;padding:2px 8px;border:1px solid var(--border);border-radius:4px;background:var(--bg)" onclick="event.stopPropagation();selectGroup('${g}')">전체</button>
+          <button style="font-size:11px;padding:2px 8px;border:1px solid var(--border);border-radius:4px;background:var(--bg)" onclick="event.stopPropagation();clearGroup('${g}')">해제</button>
+          <span class="accordion-arrow ${open?'open':''}">▼</span>
+        </span>
+      </div>
+      ${open?`<div class="accordion-body"><div class="check-list">${mkItems(lvArr)}</div></div>`:''}`;
+  };
+
+  const tabs = [
+    {id:'read',label:'읽기 LV1'},{id:'readType',label:'읽기 LV2'},{id:'write',label:'쓰기'},{id:'speak',label:'말하기'},{id:'word',label:'단어 LV1'},{id:'wordType',label:'단어 LV2'}
+  ].map(t=>`<button class="skill-tab ${mixSkill===t.id?'active':''}" onclick="setMixSkill('${t.id}')">${t.label}</button>`).join('');
+
+  app.innerHTML = `
+    <div class="header"><button class="back-btn" onclick="goHome()">‹</button><div class="header-title">테스트</div><div class="header-spacer"></div></div>
+    <div class="select-body">
+      ${mkSection('basic','기본음 (あ~わ)',LEVELS)}
+      ${mkSection('dakuten','탁음 · 반탁음',DAKUTEN_ALL_HIRA)}
+      ${mkSection('youon','요음',YOUON_LEVELS)}
+      <div style="display:flex;gap:8px;margin:10px 0 4px">
+        <button class="btn btn-secondary" style="flex:1;font-size:13px;padding:8px" onclick="selectGroup('all')">전체 선택</button>
+        <button class="btn btn-secondary" style="flex:1;font-size:13px;padding:8px" onclick="clearGroup('all')">전체 해제</button>
+      </div>
+      <div class="section-label" style="margin-top:12px">스킬 선택</div>
+      <div class="skill-tabs">${tabs}</div>
+      <div class="section-label">문제 수</div>
+      <div class="count-row">
+        <input type="range" min="10" max="100" step="5" value="${mixCount}" oninput="mixCount=+this.value;document.getElementById('mc').textContent=this.value+'문제'">
+        <span class="count-label" id="mc">${mixCount}문제</span>
+      </div>
+      <button class="btn btn-primary" ${mixSelected.length>=1?'':'disabled'} onclick="startMixQuiz()">시작하기</button>
+    </div>`;
+}
+
+const MIX_ALL_HIRA = [...LEVELS, ...DAKUTEN_ALL_HIRA, ...YOUON_LEVELS];
+function toggleMix(id) { mixSelected = mixSelected.includes(id)?mixSelected.filter(x=>x!==id):[...mixSelected,id]; renderMixSelect(); }
+function selectGroup(g) {
+  const ids = g==='all'?MIX_ALL_HIRA.map(l=>l.id):g==='basic'?LEVELS.map(l=>l.id):g==='dakuten'?DAKUTEN_ALL_HIRA.map(l=>l.id):YOUON_LEVELS.map(l=>l.id);
+  mixSelected = [...new Set([...mixSelected, ...ids])];
+  renderMixSelect();
+}
+function clearGroup(g) {
+  const ids = new Set(g==='all'?MIX_ALL_HIRA.map(l=>l.id):g==='basic'?LEVELS.map(l=>l.id):g==='dakuten'?DAKUTEN_ALL_HIRA.map(l=>l.id):YOUON_LEVELS.map(l=>l.id));
+  mixSelected = mixSelected.filter(id=>!ids.has(id));
+  renderMixSelect();
+}
+function selectAllMix() { selectGroup('all'); }
+function clearAllMix() { clearGroup('all'); }
+function setMixSkill(sk) { mixSkill=sk; renderMixSelect(); }
+
+// ── 단어 연습 선택 ──────────────────────────────────────────────
+function renderWordSelect() {
+  const all = LEVELS;
+  const items = all.map(l => {
+    const sel = wordSelected.includes(l.id);
+    const preview = l.chars.slice(0,3).map(([c])=>c).join('');
+    return `<div class="check-item ${sel?'selected':''}" onclick="toggleWord(${l.id})">
+      <input type="checkbox" ${sel?'checked':''} onclick="event.stopPropagation();toggleWord(${l.id})">
+      <span class="check-item-label">${l.name}</span>
+      <span class="check-item-chars jp">${preview}…</span>
+    </div>`;
+  }).join('');
+  // 선택 레벨의 단어 수 미리보기
+  const charSet = new Set(LEVELS.filter(l=>wordSelected.includes(l.id)).flatMap(l=>l.chars.map(([c])=>c)));
+  const avail = wordSelected.length ? WORDS.filter(w=>[...w.w].every(ch=>charSet.has(ch))).length : WORDS.filter(w=>w.lv<=10).length;
+  app.innerHTML = `
+    <div class="header"><button class="back-btn" onclick="goHome()">‹</button><div class="header-title">단어 연습</div><div class="header-spacer"></div></div>
+    <div class="select-body">
+      <p class="select-desc">포함할 행을 선택하면 해당 글자로 이루어진 단어만 출제됩니다. 선택 없이 시작하면 전체 단어가 나옵니다.</p>
+      <div class="section-label">행 선택 (선택 없으면 전체)</div>
+      <div class="check-actions"><button onclick="selectAllWord()">전체 선택</button><button onclick="clearAllWord()">전체 해제</button></div>
+      <div class="check-list">${items}</div>
+      <p style="font-size:13px;color:var(--text-muted);text-align:center;margin:8px 0">출제 가능 단어: <b>${avail}개</b></p>
+      <button class="btn btn-primary" onclick="startWordFlash()">시작하기</button>
+    </div>`;
+}
+
+function toggleWord(id) { wordSelected=wordSelected.includes(id)?wordSelected.filter(x=>x!==id):[...wordSelected,id]; renderWordSelect(); }
+function selectAllWord() { wordSelected=LEVELS.map(l=>l.id); renderWordSelect(); }
+function clearAllWord() { wordSelected=[]; renderWordSelect(); }
+
+// ── 퀴즈 ─────────────────────────────────────────────────────
+function renderQuiz() {
+  quizAnswered = false;
+  const q = state.quiz;
+  const cur = q.questions[q.current];
+  const total = q.questions.length;
+  const pbar = total>0?(q.current/total*100):0;
+  let body = '';
+  if (cur.type==='speak') body = speakBody(cur);
+  else if (cur.type==='write') body = writeBody(cur);
+  else if (cur.type==='readType') body = typeBody(cur);
+  else if (cur.type==='wordType') body = typeBody(cur);
+  else body = readBody(cur);
+  app.innerHTML = `
+    <div class="quiz-screen">
+      <div class="header"><button class="back-btn" onclick="quizBack()">‹</button><div class="header-title" style="font-size:14px">${q.title}</div><div class="header-right">${q.isMix?'':`<button class="speak-btn" onclick="speakCurrent()">🔊</button>`}<button class="note-btn${isNoted(cur)?' noted':''}" id="note-btn" onclick="toggleNote()">${isNoted(cur)?'★':'☆'}</button></div></div>
+      <div class="progress-bar-container"><div class="progress-bar-fill" style="width:${pbar}%"></div></div>
+      <div class="quiz-body">
+        <div class="quiz-counter">${q.current+1} / ${total}</div>
+        ${body}
+        <div id="fb" class="feedback-area"></div>
+        ${cur.type==='word'?'<div id="meaning" class="word-meaning"></div>':''}
+        ${cur.type!=='speak'?'<div class="next-wrap"><button class="btn btn-primary" id="nxt" style="display:none" onclick="nextQ()">다음 →</button></div>':''}
+      </div>
+    </div>`;
+  if (cur.type==='write') requestAnimationFrame(()=>initDrawCanvas(cur.char,!!q.isPracticeWrite));
+  if (cur.type==='readType'||cur.type==='wordType') requestAnimationFrame(()=>document.getElementById('type-input')?.focus());
+}
+
+function readBody(cur) {
+  const btns = cur.choices.map(c =>
+    `<button class="choice-btn" data-v="${esc(c)}" onclick="choose(this,'${esc(c)}','${esc(cur.answer)}','${esc(cur.meaning||'')}')">${fmtR(c, null, true)}</button>`
+  ).join('');
+  return `
+    <div class="quiz-card">
+      <div class="quiz-main-char jp" style="font-size:${charSize(cur.char)}">${cur.char}</div>
+    </div>
+    <div class="choices-grid choices-2col">${btns}</div>`;
+}
+
+function writeBody(cur) {
+  const practice = !!state.quiz.isPracticeWrite;
+  return `
+    <div class="quiz-card" style="padding:12px 8px;gap:6px">
+      <div class="quiz-main-romaji">${fmtR(cur.romaji, cur.char)}</div>
+      ${practice?`<div class="quiz-hint" style="font-size:12px">반투명 글자를 따라 써보세요 · 획 번호 순서대로</div>`:`<div class="quiz-hint">${/[ァ-ヶ]/.test(cur.char)?'카타카나':'히라가나'}를 직접 써보세요</div>`}
+      <div class="draw-wrap">
+        <canvas id="draw-canvas" width="280" height="280"></canvas>
+      </div>
+    </div>
+    <div id="draw-btns" class="draw-btns" style="justify-content:center">
+      <button class="btn btn-secondary" style="flex:1;max-width:130px" onclick="clearCanvas()">지우기</button>
+      <button class="btn btn-primary" style="flex:1;max-width:130px" onclick="checkDraw('${esc(cur.char)}')">확인</button>
+    </div>`;
+}
+
+function typeBody(cur) {
+  const isWord = cur.type==='wordType';
+  const hint = isWord ? '발음 또는 뜻을 입력하세요' : '로마자 또는 한국어 발음을 입력하세요';
+  const ph = isWord ? '예) tako  또는  문어' : '예) a  또는  아';
+  return `
+    <div class="quiz-card">
+      <div class="quiz-main-char jp" style="font-size:${charSize(cur.char)}">${cur.char}</div>
+      <div class="quiz-hint">${hint}</div>
+    </div>
+    <div style="padding:0 8px;display:flex;flex-direction:column;gap:10px">
+      <input type="text" id="type-input" class="type-input" placeholder="${ph}" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" onkeydown="if(event.key==='Enter'){event.stopPropagation();checkType();}">
+      <button class="btn btn-primary" onclick="checkType()">확인</button>
+    </div>`;
+}
+function checkType() {
+  if(quizAnswered) return;
+  const input=document.getElementById('type-input'); if(!input) return;
+  const val=input.value.trim().toLowerCase(); if(!val) return;
+  quizAnswered=true;
+  const cur=state.quiz.questions[state.quiz.current];
+  const isWord = cur.type==='wordType';
+  const ko=charToKo(cur.char);
+  const meaning=(cur.meaning||'').toLowerCase();
+  const correct = val===cur.romaji.toLowerCase() || val===ko || (isWord && meaning && val===meaning);
+  speakNow(cur.char);
+  if(correct) state.quiz.score++; else addWrong(cur);
+  state.quiz.answers.push(correct);
+  input.disabled=true;
+  const fb=document.getElementById('fb');
+  if(fb){
+    const ans = isWord ? `<b>${cur.romaji}</b> (${ko}) · ${cur.meaning||''}` : `<b>${cur.romaji}</b> (${ko})`;
+    const ok = isWord
+      ? `✓ 정답! <span style="font-size:15px;font-weight:normal">${cur.romaji} (${ko}) · ${cur.meaning||''}</span>`
+      : `✓ 정답! <span style="font-size:15px;font-weight:normal">${cur.romaji} (${ko})</span>`;
+    fb.innerHTML = correct ? ok : `✗ 오답 — 정답: ${ans}`;
+    fb.className='feedback-area '+(correct?'feedback-correct':'feedback-wrong');
+  }
+  const nxt=document.getElementById('nxt'); if(nxt) nxt.style.display='block';
+}
+
+function speakBody(cur) {
+  const ok = 'webkitSpeechRecognition' in window || 'SpeechRecognition' in window;
+  if (!ok) return `
+    <div class="quiz-card">
+      <div class="quiz-main-char jp" style="font-size:${charSize(cur.char)}">${cur.char}</div>
+      <div class="quiz-hint">${fmtR(cur.romaji, cur.char)}</div>
+    </div>
+    <div class="info-box">🎤 말하기 기능은 Chrome 브라우저에서 사용하세요.</div>
+    <div class="next-wrap"><button class="btn btn-secondary" onclick="skipSpeak()">건너뛰기</button></div>`;
+  return `
+    <div class="quiz-card">
+      <div class="quiz-main-char jp" style="font-size:${charSize(cur.char)}">${cur.char}</div>
+      <div class="quiz-hint">${fmtR(cur.romaji, cur.char)}</div>
+    </div>
+    <div class="speak-area">
+      <button class="mic-btn" id="mic" onclick="toggleMic()">🎤</button>
+      <div class="speak-status" id="mic-status">버튼을 누르고 말해보세요</div>
+      <div class="speak-recognized jp" id="mic-result"></div>
+    </div>
+    <div class="next-wrap"><button class="btn btn-primary" id="nxt" style="display:none" onclick="nextQ()">다음 →</button></div>`;
+}
+
+function choose(btn, chosen, answer, meaning) {
+  if (quizAnswered) return;
+  quizAnswered = true;
+  const correct = chosen === answer;
+  const cur = state.quiz.questions[state.quiz.current];
+  speakNow(cur.char);
+  if (correct) state.quiz.score++;
+  else addWrong(cur);
+  state.quiz.answers.push(correct);
+  document.querySelectorAll('.choice-btn').forEach(b => {
+    const val = b.dataset.v ?? b.textContent.trim();
+    if (val===answer) b.classList.add('correct');
+    else if (val===chosen) b.classList.add('wrong');
+    else b.classList.add('dimmed');
+    b.disabled=true;
+  });
+  const fb=document.getElementById('fb');
+  if(fb){
+    const isWord=cur.type==='word';
+    const ko=isWord?charToKo(cur.char):'';
+    const pron=isWord&&correct?`<div style="font-size:14px;font-weight:normal;margin-top:3px">${cur.romaji} (${ko})</div>`:'';
+    fb.innerHTML=correct
+      ?'✓ 정답!'+pron
+      :'✗ 오답 — 정답: '+answer+(isWord?` (${ko})`:'');
+    fb.className='feedback-area '+(correct?'feedback-correct':'feedback-wrong');
+  }
+  if(meaning){const m=document.getElementById('meaning');if(m&&correct){m.textContent='🇰🇷 '+meaning;m.style.display='block';}}
+  const nxt=document.getElementById('nxt');if(nxt)nxt.style.display='block';
+}
+
+function toggleMic(){micListening?stopMic():startMic();}
+function startMic(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR)return;
+  recognition=new SR();recognition.lang='ja-JP';recognition.interimResults=false;recognition.maxAlternatives=3;
+  document.getElementById('mic')?.classList.add('listening');
+  const status=document.getElementById('mic-status');if(status)status.textContent='듣고 있어요...';
+  micListening=true;
+  recognition.onresult=e=>{
+    const transcripts=Array.from({length:e.results[0].length},(_,i)=>e.results[0][i].transcript);
+    const hira=katakanaToHiragana(transcripts[0]);
+    const res=document.getElementById('mic-result');if(res)res.textContent=hira;
+    const cur=state.quiz.questions[state.quiz.current];
+    const correct=transcripts.some(t=>katakanaToHiragana(t)===katakanaToHiragana(cur.char));
+    if(correct)state.quiz.score++;state.quiz.answers.push(correct);quizAnswered=true;
+    const fb=document.getElementById('fb');
+    if(fb){fb.textContent=correct?'✓ 정답!':'✗ 오답 — 정답: '+cur.char;fb.className='feedback-area '+(correct?'feedback-correct':'feedback-wrong');}
+    const nxt=document.getElementById('nxt');if(nxt)nxt.style.display='block';
+    stopMic();
+  };
+  recognition.onerror=e=>{
+    const s=document.getElementById('mic-status');
+    if(s)s.textContent=e.error==='not-allowed'?'마이크 접근 권한이 거부됐어요.':'인식 실패. 다시 시도하세요.';
+    stopMic();
+  };
+  recognition.onend=()=>stopMic();
+  recognition.start();
+}
+function stopMic(){
+  if(recognition){try{recognition.stop();}catch(e){}recognition=null;}
+  micListening=false;
+  document.getElementById('mic')?.classList.remove('listening');
+  const s=document.getElementById('mic-status');if(s&&s.textContent==='듣고 있어요...')s.textContent='버튼을 누르고 말해보세요';
+}
+function skipSpeak(){state.quiz.answers.push(false);nextQ();}
+
+function nextQ(){
+  state.quiz.current++;
+  if(state.quiz.current>=state.quiz.questions.length) finishQuiz();
+  else render();
+}
+
+function finishQuiz(){
+  const q=state.quiz;
+  const scorePct=q.questions.length>0?Math.round(q.score/q.questions.length*100):0;
+  if(!q.isMix&&q.sourceId){
+    const sk = q.scoreKey||q.skill;
+    state.progress[q.sourceId][sk]=scorePct;
+    saveState();
+  }
+  q.resultScore=scorePct;
+  state.screen='result';render();
+}
+
+// ── 단어 플래시카드 ──────────────────────────────────────────────
+function renderWordFlash() {
+  const wf = state.wordFlash;
+  const total = wf.words.length;
+  const idx = wf.current;
+  const pbar = total>0?(idx/total*100):0;
+
+  if (idx >= total) {
+    app.innerHTML = `
+      <div class="header"><button class="back-btn" onclick="goWordSelect()">‹</button><div class="header-title">단어 연습</div><div class="header-spacer"></div></div>
+      <div class="word-done">
+        <div class="word-done-icon">🎉</div>
+        <div class="word-done-msg">모든 단어 완료!</div>
+        <div class="word-done-sub">${total}개 단어를 학습했어요</div>
+        <div style="width:100%;margin-top:24px;display:flex;flex-direction:column;gap:10px">
+          <button class="btn btn-primary" onclick="startWordFlash()">다시 보기</button>
+          <button class="btn btn-secondary" onclick="goWordSelect()">행 선택으로</button>
+          <button class="btn btn-secondary" onclick="goHome()">홈으로</button>
+        </div>
+      </div>`;
+    return;
+  }
+
+  const w = wf.words[idx];
+  app.innerHTML = `
+    <div class="flash-screen">
+      <div class="header"><button class="back-btn" onclick="quizBack()">‹</button><div class="header-title">단어 연습</div><button class="speak-btn" onclick="speakCurrent()" title="발음 듣기">🔊</button></div>
+      <div class="progress-bar-container"><div class="progress-bar-fill" style="width:${pbar}%"></div></div>
+      <div class="flash-body">
+        <div class="flash-counter">${idx+1} / ${total}</div>
+        <div class="flash-card">
+          <div class="flash-jp jp" style="font-size:${charSize(w.w)}">${w.w}</div>
+          <div class="flash-romaji">${fmtR(w.r, w.w)}</div>
+          <div class="flash-meaning">${w.m}</div>
+        </div>
+        <div class="next-wrap">
+          <button class="btn btn-primary" onclick="nextFlash()">${idx+1<total?'다음 →':'완료 ✓'}</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+function nextFlash() { state.wordFlash.current++; renderWordFlash(); }
+
+// ── 결과 ─────────────────────────────────────────────────────
+function renderResult() {
+  const q=state.quiz;
+  const pass=q.resultScore>=80;
+  app.innerHTML = `
+    <div class="result-screen">
+      <div class="result-icon">${pass?'🎊':'📚'}</div>
+      <div class="result-score ${pass?'pass':'fail'}">${q.resultScore}%</div>
+      <div class="result-detail">${q.score} / ${q.questions.length} 정답</div>
+      <div class="result-actions">
+        <button class="btn btn-primary" onclick="retryQuiz()">다시 도전</button>
+        ${q.sourceId?`<button class="btn btn-secondary" onclick="goLevel(${q.sourceId})">레벨로 돌아가기</button>`:''}
+        <button class="btn btn-secondary" onclick="goHome()">홈으로</button>
+      </div>
+    </div>`;
+}
+
+// ── 오답노트 ──────────────────────────────────────────────────
+function renderNotes() {
+  const all = Object.values(wrongNotes);
+  const tabs = [{id:'all',label:'전체'},{id:'char',label:'낱자'},{id:'word',label:'단어'}];
+  const tabHtml = tabs.map(t=>`<button class="notes-tab ${notesTab===t.id?'active':''}" onclick="notesTab='${t.id}';renderNotes()">${t.label}</button>`).join('');
+  const filtered = notesTab==='all' ? all : all.filter(n=>n.kind===notesTab);
+  let listHtml = '';
+  if (!filtered.length) {
+    listHtml = '<div class="notes-empty">아직 기록된 항목이 없어요.<br>틀리거나 ☆ 표시한 항목이 여기에 쌓여요.</div>';
+  } else {
+    listHtml = filtered.sort((a,b)=>b.count-a.count).map(n=>`
+      <div class="notes-item">
+        <div class="notes-char jp">${n.char}</div>
+        <div class="notes-info">
+          <div class="notes-romaji">${fmtR(n.romaji, n.char)}${n.meaning?' · '+n.meaning:''}</div>
+          <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:3px">
+            ${n.count>0?`<span class="notes-badge wrong">오답 ${n.count}회</span>`:''}
+            ${n.bookmarked?'<span class="notes-badge book">★ 북마크</span>':''}
+          </div>
+        </div>
+        <button class="speak-btn" style="font-size:18px" onclick="speak('${esc(n.char)}')">🔊</button>
+        <button class="notes-del" onclick="deleteNote('${esc(n.char)}')">✕</button>
+      </div>`).join('');
+  }
+  app.innerHTML = `
+    <div class="header"><button class="back-btn" onclick="goHome()">‹</button><div class="header-title">📝 오답노트</div><div class="header-spacer"></div></div>
+    <div class="notes-screen">
+      <div class="notes-tabs">${tabHtml}</div>
+      <div class="notes-list">${listHtml}</div>
+      <div style="margin-top:16px;display:flex;flex-direction:column;gap:8px">
+        <button class="btn btn-primary" ${filtered.length?'':'disabled'} onclick="startNotesQuiz()">오답으로 시험 보기</button>
+        <button class="btn btn-danger" style="font-size:13px" onclick="clearAllNotes()">전체 삭제</button>
+      </div>
+    </div>`;
+}
+
+function startNotesQuiz() {
+  const all = Object.values(wrongNotes);
+  const filtered = notesTab==='all' ? all : all.filter(n=>n.kind===notesTab);
+  if (!filtered.length) return;
+  const allR = filtered.map(n=>n.romaji);
+  const qs = shuffle(filtered).map(n => ({
+    type: n.kind==='word'?'word':'read',
+    char: n.char, romaji: n.romaji, meaning: n.meaning||'', answer: n.romaji,
+    choices: shuffle([n.romaji, ...shuffle(allR.filter(r=>r!==n.romaji)).slice(0,3)]),
+  }));
+  const label = {all:'전체',char:'낱자',word:'단어'}[notesTab];
+  state.quiz = {questions:qs,current:0,score:0,answers:[],skill:'read',isMix:false,sourceId:null,isNotes:true,title:`오답노트 · ${label}`,resultScore:0};
+  state.screen='quiz'; render();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// STARTERS
+// ═══════════════════════════════════════════════════════════════
+
+function startLvQuiz(lvId, skill) {
+  const isPracticeWrite = skill==='writePractice';
+  const realSkill = isPracticeWrite ? 'write' : skill;
+  let qs;
+  if (realSkill==='read') qs=mkReadQ(lvId);
+  else if (realSkill==='readType') qs=mkReadTypeQ(lvId);
+  else if (realSkill==='write') qs=mkWriteQ(lvId);
+  else qs=mkSpeakQ(lvId);
+  const lv=ALL_LEVELS.find(l=>l.id===lvId);
+  const label={read:'읽기 LV1',readType:'읽기 LV2',write:isPracticeWrite?'쓰기 연습':'쓰기 테스트',speak:'말하기'}[realSkill]||'쓰기';
+  const scoreKey = realSkill==='readType'?'read':realSkill;
+  state.quiz={questions:qs,current:0,score:0,answers:[],skill:realSkill,scoreKey,isMix:false,isPracticeWrite,sourceId:lvId,title:`${lv.name} · ${label}`,resultScore:0};
+  state.screen='quiz';render();
+}
+
+function startWordFlash() {
+  let words;
+  if (wordSelected.length > 0) {
+    const charSet=new Set(LEVELS.filter(l=>wordSelected.includes(l.id)).flatMap(l=>l.chars.map(([c])=>c)));
+    words=WORDS.filter(w=>[...w.w].every(ch=>charSet.has(ch)));
+  } else {
+    words=[...WORDS];
+  }
+  if (!words.length) { alert('선택한 행의 조합으로 출제 가능한 단어가 없어요. 다른 행을 추가해보세요.'); return; }
+  state.wordFlash={words:shuffle(words),current:0};
+  state.screen='wordFlash';render();
+}
+
+function startMixQuiz() {
+  if (!mixSelected.length) return;
+  let qs;
+  if (mixSkill==='read') qs=mkMixReadQ(mixSelected,mixCount);
+  else if (mixSkill==='readType') qs=mkMixReadTypeQ(mixSelected,mixCount);
+  else if (mixSkill==='write') qs=mkMixWriteQ(mixSelected,mixCount);
+  else if (mixSkill==='speak') qs=mkMixSpeakQ(mixSelected,mixCount);
+  else if (mixSkill==='wordType') {
+    qs=mkMixWordTypeQ(mixSelected,mixCount);
+    if (!qs){alert('선택한 행의 조합으로 만들 수 있는 단어가 없어요. 다른 행을 추가해보세요.');return;}
+  } else {
+    qs=mkMixWordQ(mixSelected,mixCount);
+    if (!qs){alert('선택한 행의 조합으로 만들 수 있는 단어가 없어요. 다른 행을 추가해보세요.');return;}
+  }
+  const label={read:'읽기 LV1',readType:'읽기 LV2',write:'쓰기',speak:'말하기',word:'단어 LV1',wordType:'단어 LV2'}[mixSkill];
+  state.quiz={questions:qs,current:0,score:0,answers:[],skill:mixSkill,isMix:true,sourceId:null,title:`테스트 · ${label} · ${mixCount}문제`,resultScore:0};
+  state.screen='quiz';render();
+}
+
+function retryQuiz() {
+  const q=state.quiz;
+  if(q.isMix) startMixQuiz();
+  else startLvQuiz(q.sourceId,q.skill);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════════════════════
+
+function goHome(){state.screen='kanaHome';render();}
+function goNotes(){state.screen='notes';renderNotes();}
+function goLevel(id){state.levelId=id!==undefined?id:state.levelId;state.screen='level';render();}
+function goMixSelect(){
+  if(!mixSelected.length) mixSelected=LEVELS.slice(0,2).map(l=>l.id);
+  state.screen='mixSelect';render();
+}
+function goWordSelect(){state.screen='wordSelect';render();}
+function quizBack(){if(confirm('종료할까요?'))goHome();}
+function confirmReset(){
+  if(confirm('모든 진행상황을 초기화할까요?')){
+    localStorage.removeItem('hiragana_progress');
+    state.progress=initProgress();
+    mixSelected=[];wordSelected=[];
+    goHome();
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════
+
+loadState();
+loadNotes();
+render();
+
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Enter') return;
+  if (state.screen === 'quiz') {
+    // 아직 답 안 한 상태면 무시 (주관식 input은 stopPropagation으로 여기 안 옴)
+    if (!quizAnswered) return;
+    const nxt = document.getElementById('nxt');
+    if (nxt && nxt.style.display !== 'none') { e.preventDefault(); nextQ(); return; }
+  }
+  // 읽기 연습(플래시카드)에서 Enter → 다음 카드
+  if (state.screen === 'readFlash') {
+    const focused = document.activeElement?.tagName;
+    if (focused !== 'INPUT' && focused !== 'TEXTAREA') { e.preventDefault(); rfMove(1); }
+  }
+});
+
+if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
+</script>
+</body>
+</html>
