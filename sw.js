@@ -1,4 +1,4 @@
-const CACHE = 'hiragana-v22';
+const CACHE = 'hiragana-v23';
 const ASSETS = ['./', './index.html', './manifest.json'];
 
 self.addEventListener('install', e => {

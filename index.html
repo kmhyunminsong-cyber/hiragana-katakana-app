@@ -870,7 +870,7 @@ function mkWordQ(maxLvId) {
 
 function mkMixReadQ(ids, count) {
   const chars = ALL_LEVELS.filter(l => ids.includes(l.id)).flatMap(l => l.chars);
-  const allR = chars.map(([,r])=>r);
+  const allR = [...new Set(chars.map(([,r])=>r))];
   return buildPool(chars, count).map(([char,romaji]) => ({
     type:'read', char, romaji, answer:romaji,
     choices: shuffle([romaji, ...shuffle(allR.filter(r=>r!==romaji)).slice(0,3)]),
@@ -912,7 +912,7 @@ function mkMixWordQ(ids, count) {
   const charSet = new Set(ALL_LEVELS.filter(l=>ids.includes(l.id)).flatMap(l=>l.chars.map(([c])=>c)));
   const avail = WORDS.filter(w => [...w.w].every(ch => charSet.has(ch)));
   if (!avail.length) return null;
-  const allR = avail.map(w=>w.r);
+  const allR = [...new Set(avail.map(w=>w.r))];
   const pool = buildPool(avail.map(w=>[w.w,w.r,w.m]), count||avail.length);
   return pool.map(([cw,cr,cm]) => ({
     type:'word', char:cw, romaji:cr, meaning:cm, answer:cr,
@@ -987,16 +987,15 @@ function renderKanaHome() {
     </div>`;
   };
   const tabBtns = TAB_DEFS.map(t=>`<button class="skill-tab ${homeTab===t.id?'active':''}" onclick="setHomeTab('${t.id}')">${t.label}</button>`).join('');
-  const hiraOnlyActions = state.script==='hira' ? `
-        <button class="btn btn-primary" onclick="goMixSelect()">🎯 전체 테스트</button>
-        <button class="btn btn-secondary" onclick="goWordSelect()">📖 단어 연습</button>` : '';
+  const wordAction = state.script==='hira' ? `<button class="btn btn-secondary" onclick="goWordSelect()">📖 단어 연습</button>` : '';
   app.innerHTML = `
     <div class="header"><button class="back-btn" onclick="goScriptPick()">‹</button><div class="header-title">🇯🇵 ${sc.label} 학습</div><div class="header-spacer"></div></div>
     <div class="home-body">
       <div class="skill-tabs" style="margin-bottom:12px">${tabBtns}</div>
       <div class="level-grid">${cur.levels.map(mkCard).join('')}</div>
       <div class="home-actions">
-        ${hiraOnlyActions}
+        <button class="btn btn-primary" onclick="goMixSelect()">🎯 전체 테스트</button>
+        ${wordAction}
         <button class="btn btn-secondary" onclick="goNotes()">📝 오답노트</button>
       </div>
     </div>`;
@@ -1104,22 +1103,31 @@ function renderMixSelect() {
       ${open?`<div class="accordion-body"><div class="check-list">${mkItems(lvArr)}</div></div>`:''}`;
   };
 
-  const tabs = [
+  const hasWordChoice = mixSelected.some(id=>id<1000);
+  const skillDefs = [
     {id:'read',label:'읽기 LV1'},{id:'readType',label:'읽기 LV2'},{id:'write',label:'쓰기'},{id:'speak',label:'말하기'},{id:'word',label:'단어 LV1'},{id:'wordType',label:'단어 LV2'}
-  ].map(t=>`<button class="skill-tab ${mixSkill===t.id?'active':''}" onclick="setMixSkill('${t.id}')">${t.label}</button>`).join('');
+  ];
+  const tabs = skillDefs.map(t=>`<button class="skill-tab ${mixSkill===t.id?'active':''}" onclick="setMixSkill('${t.id}')">${t.label}</button>`).join('');
 
   app.innerHTML = `
-    <div class="header"><button class="back-btn" onclick="goHome()">‹</button><div class="header-title">테스트</div><div class="header-spacer"></div></div>
+    <div class="header"><button class="back-btn" onclick="goHome()">‹</button><div class="header-title">전체 테스트</div><div class="header-spacer"></div></div>
     <div class="select-body">
+      <p class="select-desc">히라가나·카타카나를 함께 선택하면 두 글자를 섞어서 출제해요.</p>
+      <div class="section-label">히라가나</div>
       ${mkSection('basic','기본음 (あ~わ)',LEVELS)}
       ${mkSection('dakuten','탁음 · 반탁음',DAKUTEN_ALL_HIRA)}
       ${mkSection('youon','요음',YOUON_LEVELS)}
+      <div class="section-label" style="margin-top:16px">카타카나</div>
+      ${mkSection('basicK','기본음 (ア~ワ)',LEVELS_KATA)}
+      ${mkSection('dakutenK','탁음 · 반탁음',DAKUTEN_ALL_KATA)}
+      ${mkSection('youonK','요음',YOUON_LEVELS_KATA)}
       <div style="display:flex;gap:8px;margin:10px 0 4px">
         <button class="btn btn-secondary" style="flex:1;font-size:13px;padding:8px" onclick="selectGroup('all')">전체 선택</button>
         <button class="btn btn-secondary" style="flex:1;font-size:13px;padding:8px" onclick="clearGroup('all')">전체 해제</button>
       </div>
       <div class="section-label" style="margin-top:12px">스킬 선택</div>
       <div class="skill-tabs">${tabs}</div>
+      ${(mixSkill==='word'||mixSkill==='wordType') && !hasWordChoice ? '<p style="font-size:12px;color:var(--danger);margin:-8px 0 12px">단어 모드는 히라가나 행을 선택해야 출제할 수 있어요.</p>' : ''}
       <div class="section-label">문제 수</div>
       <div class="count-row">
         <input type="range" min="10" max="100" step="5" value="${mixCount}" oninput="mixCount=+this.value;document.getElementById('mc').textContent=this.value+'문제'">
@@ -1129,15 +1137,22 @@ function renderMixSelect() {
     </div>`;
 }
 
+const DAKUTEN_ALL_KATA = [...DAKUTEN_LEVELS_KATA, ...HANDAKUTEN_LEVELS_KATA];
 const MIX_ALL_HIRA = [...LEVELS, ...DAKUTEN_ALL_HIRA, ...YOUON_LEVELS];
+const MIX_ALL_KATA = [...LEVELS_KATA, ...DAKUTEN_ALL_KATA, ...YOUON_LEVELS_KATA];
+const MIX_GROUPS = {
+  all: [...MIX_ALL_HIRA, ...MIX_ALL_KATA],
+  basic: LEVELS, dakuten: DAKUTEN_ALL_HIRA, youon: YOUON_LEVELS,
+  basicK: LEVELS_KATA, dakutenK: DAKUTEN_ALL_KATA, youonK: YOUON_LEVELS_KATA,
+};
 function toggleMix(id) { mixSelected = mixSelected.includes(id)?mixSelected.filter(x=>x!==id):[...mixSelected,id]; renderMixSelect(); }
 function selectGroup(g) {
-  const ids = g==='all'?MIX_ALL_HIRA.map(l=>l.id):g==='basic'?LEVELS.map(l=>l.id):g==='dakuten'?DAKUTEN_ALL_HIRA.map(l=>l.id):YOUON_LEVELS.map(l=>l.id);
+  const ids = MIX_GROUPS[g].map(l=>l.id);
   mixSelected = [...new Set([...mixSelected, ...ids])];
   renderMixSelect();
 }
 function clearGroup(g) {
-  const ids = new Set(g==='all'?MIX_ALL_HIRA.map(l=>l.id):g==='basic'?LEVELS.map(l=>l.id):g==='dakuten'?DAKUTEN_ALL_HIRA.map(l=>l.id):YOUON_LEVELS.map(l=>l.id));
+  const ids = new Set(MIX_GROUPS[g].map(l=>l.id));
   mixSelected = mixSelected.filter(id=>!ids.has(id));
   renderMixSelect();
 }
@@ -1554,7 +1569,7 @@ function goHome(){state.screen='kanaHome';render();}
 function goNotes(){state.screen='notes';renderNotes();}
 function goLevel(id){state.levelId=id!==undefined?id:state.levelId;state.screen='level';render();}
 function goMixSelect(){
-  if(!mixSelected.length) mixSelected=LEVELS.slice(0,2).map(l=>l.id);
+  if(!mixSelected.length) mixSelected=(state.script==='kata'?LEVELS_KATA:LEVELS).slice(0,2).map(l=>l.id);
   state.screen='mixSelect';render();
 }
 function goWordSelect(){state.screen='wordSelect';render();}
