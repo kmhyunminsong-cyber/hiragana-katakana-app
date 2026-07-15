@@ -118,6 +118,7 @@
     .notes-list { flex: 1; display: flex; flex-direction: column; gap: 8px; }
     .notes-item { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; display: flex; align-items: center; gap: 12px; }
     .notes-char { font-family: var(--jp-font); font-size: 32px; min-width: 48px; text-align: center; line-height: 1; }
+    .notes-char-sentence { font-size: 16px; min-width: 72px; max-width: 96px; text-align: left; line-height: 1.3; }
     .notes-info { flex: 1; min-width: 0; }
     .notes-romaji { font-size: 14px; color: var(--text-sub); }
     .notes-meaning { font-size: 14px; color: var(--accent); font-weight: 600; }
@@ -492,6 +493,100 @@ const WORDS = [
 const CHAR_LV = {};
 LEVELS.forEach(l => l.chars.forEach(([c]) => { CHAR_LV[c] = l.id; }));
 
+// ── 문장 뱅크 (한자 없이 가나로만 구성, 일상·여행 회화) ──────────────
+const SENTENCE_CATS = [
+  {id:'greet',  label:'인사'},
+  {id:'thanks', label:'감사·사과'},
+  {id:'intro',  label:'자기소개'},
+  {id:'travel', label:'여행·길찾기'},
+  {id:'shop',   label:'쇼핑'},
+  {id:'food',   label:'식당'},
+  {id:'stay',   label:'숙소'},
+  {id:'feel',   label:'감정 표현'},
+  {id:'emergency', label:'긴급 상황'},
+  {id:'basic',  label:'기본 대화'},
+];
+const SENTENCES = [
+  // 인사
+  {s:'おはようございます',r:'ohayou gozaimasu',m:'좋은 아침입니다',cat:'greet'},
+  {s:'こんにちは',r:'konnichiwa',m:'안녕하세요(낮)',cat:'greet'},
+  {s:'こんばんは',r:'konbanwa',m:'안녕하세요(저녁)',cat:'greet'},
+  {s:'さようなら',r:'sayounara',m:'안녕히 가세요',cat:'greet'},
+  {s:'おやすみなさい',r:'oyasuminasai',m:'안녕히 주무세요',cat:'greet'},
+  {s:'はじめまして',r:'hajimemashite',m:'처음 뵙겠습니다',cat:'greet'},
+  {s:'よろしくおねがいします',r:'yoroshiku onegaishimasu',m:'잘 부탁드립니다',cat:'greet'},
+  {s:'おげんきですか',r:'ogenki desu ka',m:'잘 지내세요?',cat:'greet'},
+  {s:'げんきです',r:'genki desu',m:'잘 지내요',cat:'greet'},
+  // 감사·사과
+  {s:'ありがとうございます',r:'arigatou gozaimasu',m:'감사합니다',cat:'thanks'},
+  {s:'どういたしまして',r:'dou itashimashite',m:'천만에요',cat:'thanks'},
+  {s:'すみません',r:'sumimasen',m:'죄송합니다/실례합니다',cat:'thanks'},
+  {s:'ごめんなさい',r:'gomennasai',m:'미안합니다',cat:'thanks'},
+  {s:'だいじょうぶです',r:'daijoubu desu',m:'괜찮습니다',cat:'thanks'},
+  // 자기소개
+  {s:'わたしはかんこくじんです',r:'watashi wa kankokujin desu',m:'저는 한국인입니다',cat:'intro'},
+  {s:'おなまえはなんですか',r:'onamae wa nan desu ka',m:'이름이 뭐예요?',cat:'intro'},
+  {s:'これはなんですか',r:'kore wa nan desu ka',m:'이것은 무엇입니까?',cat:'intro'},
+  {s:'にほんごがすこしわかります',r:'nihongo ga sukoshi wakarimasu',m:'일본어를 조금 압니다',cat:'intro'},
+  {s:'にほんごはむずかしいです',r:'nihongo wa muzukashii desu',m:'일본어는 어렵습니다',cat:'intro'},
+  // 여행 · 길찾기
+  {s:'えきはどこですか',r:'eki wa doko desu ka',m:'역은 어디예요?',cat:'travel'},
+  {s:'トイレはどこですか',r:'toire wa doko desu ka',m:'화장실은 어디예요?',cat:'travel'},
+  {s:'ここはどこですか',r:'koko wa doko desu ka',m:'여기는 어디예요?',cat:'travel'},
+  {s:'まっすぐいってください',r:'massugu itte kudasai',m:'직진해 주세요',cat:'travel'},
+  {s:'みぎにまがってください',r:'migi ni magatte kudasai',m:'오른쪽으로 돌아주세요',cat:'travel'},
+  {s:'ひだりにまがってください',r:'hidari ni magatte kudasai',m:'왼쪽으로 돌아주세요',cat:'travel'},
+  {s:'ちかいですか',r:'chikai desu ka',m:'가까워요?',cat:'travel'},
+  {s:'あるいていけますか',r:'aruite ikemasu ka',m:'걸어서 갈 수 있어요?',cat:'travel'},
+  {s:'タクシーをよんでください',r:'takushii wo yonde kudasai',m:'택시를 불러주세요',cat:'travel'},
+  {s:'くうこうまでおねがいします',r:'kuukou made onegaishimasu',m:'공항까지 부탁드려요',cat:'travel'},
+  // 쇼핑
+  {s:'これをください',r:'kore wo kudasai',m:'이것을 주세요',cat:'shop'},
+  {s:'いくらですか',r:'ikura desu ka',m:'얼마예요?',cat:'shop'},
+  {s:'たかいです',r:'takai desu',m:'비쌉니다',cat:'shop'},
+  {s:'やすくしてください',r:'yasuku shite kudasai',m:'싸게 해주세요',cat:'shop'},
+  {s:'カードはつかえますか',r:'kaado wa tsukaemasu ka',m:'카드 쓸 수 있어요?',cat:'shop'},
+  {s:'ふくろはいりません',r:'fukuro wa irimasen',m:'봉투는 필요 없어요',cat:'shop'},
+  {s:'これにします',r:'kore ni shimasu',m:'이걸로 할게요',cat:'shop'},
+  // 식당
+  {s:'メニューをみせてください',r:'menyuu wo misete kudasai',m:'메뉴를 보여주세요',cat:'food'},
+  {s:'これはおいしいですか',r:'kore wa oishii desu ka',m:'이거 맛있어요?',cat:'food'},
+  {s:'とてもおいしいです',r:'totemo oishii desu',m:'정말 맛있어요',cat:'food'},
+  {s:'おみずをください',r:'omizu wo kudasai',m:'물 좀 주세요',cat:'food'},
+  {s:'おかいけいおねがいします',r:'okaikei onegaishimasu',m:'계산 부탁드려요',cat:'food'},
+  {s:'ひとつください',r:'hitotsu kudasai',m:'하나 주세요',cat:'food'},
+  {s:'からいのはにがてです',r:'karai no wa nigate desu',m:'매운 건 잘 못 먹어요',cat:'food'},
+  // 숙소
+  {s:'よやくしています',r:'yoyaku shiteimasu',m:'예약했습니다',cat:'stay'},
+  {s:'チェックインおねがいします',r:'chekkuin onegaishimasu',m:'체크인 부탁드려요',cat:'stay'},
+  {s:'なんじにチェックアウトですか',r:'nanji ni chekkuauto desu ka',m:'몇 시에 체크아웃이에요?',cat:'stay'},
+  {s:'ワイファイのパスワードはなんですか',r:'waifai no pasuwaado wa nan desu ka',m:'와이파이 비밀번호가 뭐예요?',cat:'stay'},
+  // 감정 표현
+  {s:'うれしいです',r:'ureshii desu',m:'기쁩니다',cat:'feel'},
+  {s:'たのしかったです',r:'tanoshikatta desu',m:'즐거웠습니다',cat:'feel'},
+  {s:'つかれました',r:'tsukaremashita',m:'피곤합니다',cat:'feel'},
+  {s:'おなかがすきました',r:'onaka ga sukimashita',m:'배가 고픕니다',cat:'feel'},
+  {s:'のどがかわきました',r:'nodo ga kawakimashita',m:'목이 마릅니다',cat:'feel'},
+  {s:'だいすきです',r:'daisuki desu',m:'정말 좋아합니다',cat:'feel'},
+  {s:'あいしてる',r:'aishiteru',m:'사랑해',cat:'feel'},
+  // 긴급 상황
+  {s:'たすけてください',r:'tasukete kudasai',m:'도와주세요',cat:'emergency'},
+  {s:'びょういんはどこですか',r:'byouin wa doko desu ka',m:'병원은 어디예요?',cat:'emergency'},
+  {s:'けいさつをよんでください',r:'keisatsu wo yonde kudasai',m:'경찰을 불러주세요',cat:'emergency'},
+  {s:'にほんごがはなせません',r:'nihongo ga hanasemasen',m:'일본어를 못합니다',cat:'emergency'},
+  {s:'えいごははなせますか',r:'eigo wa hanasemasu ka',m:'영어 할 줄 아세요?',cat:'emergency'},
+  {s:'もういちどいってください',r:'mou ichido itte kudasai',m:'한 번 더 말해주세요',cat:'emergency'},
+  // 기본 대화
+  {s:'はい、そうです',r:'hai, sou desu',m:'네, 맞습니다',cat:'basic'},
+  {s:'いいえ、ちがいます',r:'iie, chigaimasu',m:'아니요, 다릅니다',cat:'basic'},
+  {s:'わかりました',r:'wakarimashita',m:'알겠습니다',cat:'basic'},
+  {s:'わかりません',r:'wakarimasen',m:'모르겠습니다',cat:'basic'},
+  {s:'ちょっとまってください',r:'chotto matte kudasai',m:'잠깐만 기다려주세요',cat:'basic'},
+  {s:'きをつけてください',r:'ki wo tsukete kudasai',m:'조심하세요',cat:'basic'},
+  {s:'がんばってください',r:'ganbatte kudasai',m:'힘내세요',cat:'basic'},
+  {s:'おつかれさまでした',r:'otsukaresama deshita',m:'수고하셨습니다',cat:'basic'},
+];
+
 // ═══════════════════════════════════════════════════════════════
 // STATE
 // ═══════════════════════════════════════════════════════════════
@@ -509,6 +604,7 @@ let mixSelected = [], mixSkill = 'read', mixCount = 20;
 let homeTab = 'basic';
 let mixOpen = new Set(); // 아코디언 열린 섹션
 let wordSelected = [];
+let sentenceSelected = [], sentenceCount = 10;
 let quizAnswered = false, recognition = null, micListening = false;
 let wrongNotes = {};
 let notesTab = 'all';
@@ -519,14 +615,14 @@ function loadNotes() {
 function saveNotes() { localStorage.setItem('hiragana_notes',JSON.stringify(wrongNotes)); }
 function isNoted(cur) { const n=wrongNotes[cur.char]; return n&&(n.bookmarked||n.count>0); }
 function addWrong(cur) {
-  const key=cur.char, kind=cur.type==='word'?'word':'char';
+  const key=cur.char, kind=cur.type==='word'?'word':cur.type==='sentence'?'sentence':'char';
   if(!wrongNotes[key]) wrongNotes[key]={char:cur.char,romaji:cur.romaji,meaning:cur.meaning||'',kind,count:0,bookmarked:false};
   wrongNotes[key].count++;
   saveNotes();
 }
 function toggleNote() {
   const cur=state.quiz?.questions[state.quiz.current]; if(!cur) return;
-  const key=cur.char, kind=cur.type==='word'?'word':'char';
+  const key=cur.char, kind=cur.type==='word'?'word':cur.type==='sentence'?'sentence':'char';
   if(!wrongNotes[key]) wrongNotes[key]={char:cur.char,romaji:cur.romaji,meaning:cur.meaning||'',kind,count:0,bookmarked:true};
   else wrongNotes[key].bookmarked=!wrongNotes[key].bookmarked;
   if(!wrongNotes[key].bookmarked&&wrongNotes[key].count===0) delete wrongNotes[key];
@@ -920,6 +1016,13 @@ function mkMixWordQ(ids, count) {
   }));
 }
 
+function mkSentenceQ(cats, count) {
+  const pool = cats && cats.length ? SENTENCES.filter(x=>cats.includes(x.cat)) : SENTENCES;
+  return shuffle(pool).slice(0, count||pool.length).map(x => ({
+    type:'sentence', char:x.s, romaji:x.r, meaning:x.m, answer:x.r,
+  }));
+}
+
 // ═══════════════════════════════════════════════════════════════
 // RENDER MAIN
 // ═══════════════════════════════════════════════════════════════
@@ -934,6 +1037,7 @@ function render() {
   else if (s==='readFlash') renderReadFlash();
   else if (s==='mixSelect') renderMixSelect();
   else if (s==='wordSelect') renderWordSelect();
+  else if (s==='sentenceSelect') renderSentenceSelect();
   else if (s==='quiz') renderQuiz();
   else if (s==='wordFlash') renderWordFlash();
   else if (s==='result') renderResult();
@@ -956,6 +1060,7 @@ function renderScriptPick() {
         ${mkScriptCard('kata','ア','카타카나','기본음 · 탁음 · 반탁음 · 요음')}
       </div>
       <div class="home-actions" style="margin-top:20px">
+        <button class="btn btn-primary" onclick="goSentenceSelect()">💬 문장 연습</button>
         <button class="btn btn-secondary" onclick="goNotes()">📝 오답노트</button>
       </div>
     </div>`;
@@ -978,9 +1083,9 @@ function renderKanaHome() {
   const mkCard = (l) => {
     const p = state.progress[l.id] || {};
     const b = (label,score) => `<span class="badge ${score<0?'badge-none':score>=80?'badge-done':'badge-partial'}">${score<0?label:label+' '+score+'%'}</span>`;
-    const num = l.group==='dakuten'?'탁음':l.group==='handakuten'?'반탁음':l.group==='youon'?'요음':'LV'+l.id;
+    const num = l.group==='dakuten'?'탁음':l.group==='handakuten'?'반탁음':l.group==='youon'?'요음':'';
     return `<div class="level-card unlocked" onclick="goLevel(${l.id})">
-      <div class="lv-num">${num}</div>
+      ${num?`<div class="lv-num">${num}</div>`:''}
       <div class="lv-rep jp">${l.chars[0][0]}</div>
       <div class="lv-name">${l.name}</div>
       <div class="lv-badges">${b('読',p.read??-1)}${b('書',p.write??-1)}${b('話',p.speak??-1)}</div>
@@ -1191,6 +1296,47 @@ function toggleWord(id) { wordSelected=wordSelected.includes(id)?wordSelected.fi
 function selectAllWord() { wordSelected=LEVELS.map(l=>l.id); renderWordSelect(); }
 function clearAllWord() { wordSelected=[]; renderWordSelect(); }
 
+// ── 문장 연습 선택 ────────────────────────────────────────────
+function renderSentenceSelect() {
+  const items = SENTENCE_CATS.map(c => {
+    const sel = sentenceSelected.includes(c.id);
+    const n = SENTENCES.filter(x=>x.cat===c.id).length;
+    return `<div class="check-item ${sel?'selected':''}" onclick="toggleSentenceCat('${c.id}')">
+      <input type="checkbox" ${sel?'checked':''} onclick="event.stopPropagation();toggleSentenceCat('${c.id}')">
+      <span class="check-item-label">${c.label}</span>
+      <span class="check-item-chars" style="font-size:13px;color:var(--text-muted)">${n}개</span>
+    </div>`;
+  }).join('');
+  const avail = sentenceSelected.length ? SENTENCES.filter(x=>sentenceSelected.includes(x.cat)).length : SENTENCES.length;
+  const maxCount = Math.max(5, avail);
+  app.innerHTML = `
+    <div class="header"><button class="back-btn" onclick="goScriptPick()">‹</button><div class="header-title">💬 문장 연습</div><div class="header-spacer"></div></div>
+    <div class="select-body">
+      <p class="select-desc">한자 없이 히라가나·카타카나로만 된 일상·여행 회화 문장을 보고 로마자(또는 한글 발음)로 읽어보세요. 카테고리를 선택하지 않으면 전체에서 출제됩니다.</p>
+      <div class="section-label">카테고리 (선택 없으면 전체)</div>
+      <div class="check-actions"><button onclick="selectAllSentenceCat()">전체 선택</button><button onclick="clearAllSentenceCat()">전체 해제</button></div>
+      <div class="check-list">${items}</div>
+      <p style="font-size:13px;color:var(--text-muted);text-align:center;margin:8px 0">출제 가능 문장: <b>${avail}개</b></p>
+      <div class="section-label">문제 수</div>
+      <div class="count-row">
+        <input type="range" min="5" max="${maxCount}" step="5" value="${Math.min(sentenceCount,maxCount)}" oninput="sentenceCount=+this.value;document.getElementById('sc').textContent=this.value+'문장'">
+        <span class="count-label" id="sc">${Math.min(sentenceCount,maxCount)}문장</span>
+      </div>
+      <button class="btn btn-primary" onclick="startSentenceQuiz()">시작하기</button>
+    </div>`;
+}
+function toggleSentenceCat(id) { sentenceSelected=sentenceSelected.includes(id)?sentenceSelected.filter(x=>x!==id):[...sentenceSelected,id]; renderSentenceSelect(); }
+function selectAllSentenceCat() { sentenceSelected=SENTENCE_CATS.map(c=>c.id); renderSentenceSelect(); }
+function clearAllSentenceCat() { sentenceSelected=[]; renderSentenceSelect(); }
+function goSentenceSelect() { state.screen='sentenceSelect'; render(); }
+
+function startSentenceQuiz() {
+  const qs = mkSentenceQ(sentenceSelected, sentenceCount);
+  if (!qs.length) { alert('출제 가능한 문장이 없어요.'); return; }
+  state.quiz = {questions:qs,current:0,score:0,answers:[],skill:'sentence',isMix:true,sourceId:null,title:`문장 연습 · ${qs.length}문장`,resultScore:0};
+  state.screen='quiz'; render();
+}
+
 // ── 퀴즈 ─────────────────────────────────────────────────────
 function renderQuiz() {
   quizAnswered = false;
@@ -1203,10 +1349,11 @@ function renderQuiz() {
   else if (cur.type==='write') body = writeBody(cur);
   else if (cur.type==='readType') body = typeBody(cur);
   else if (cur.type==='wordType') body = typeBody(cur);
+  else if (cur.type==='sentence') body = typeBody(cur);
   else body = readBody(cur);
   app.innerHTML = `
     <div class="quiz-screen">
-      <div class="header"><button class="back-btn" onclick="quizBack()">‹</button><div class="header-title" style="font-size:14px">${q.title}</div><div class="header-right">${q.isMix?'':`<button class="speak-btn" onclick="speakCurrent()">🔊</button>`}<button class="note-btn${isNoted(cur)?' noted':''}" id="note-btn" onclick="toggleNote()">${isNoted(cur)?'★':'☆'}</button></div></div>
+      <div class="header"><button class="back-btn" onclick="quizBack()">‹</button><div class="header-title" style="font-size:14px">${q.title}</div><div class="header-right">${(q.isMix&&q.skill!=='sentence')?'':`<button class="speak-btn" onclick="speakCurrent()">🔊</button>`}<button class="note-btn${isNoted(cur)?' noted':''}" id="note-btn" onclick="toggleNote()">${isNoted(cur)?'★':'☆'}</button></div></div>
       <div class="progress-bar-container"><div class="progress-bar-fill" style="width:${pbar}%"></div></div>
       <div class="quiz-body">
         <div class="quiz-counter">${q.current+1} / ${total}</div>
@@ -1217,7 +1364,7 @@ function renderQuiz() {
       </div>
     </div>`;
   if (cur.type==='write') requestAnimationFrame(()=>initDrawCanvas(cur.char,!!q.isPracticeWrite));
-  if (cur.type==='readType'||cur.type==='wordType') requestAnimationFrame(()=>document.getElementById('type-input')?.focus());
+  if (cur.type==='readType'||cur.type==='wordType'||cur.type==='sentence') requestAnimationFrame(()=>document.getElementById('type-input')?.focus());
 }
 
 function readBody(cur) {
@@ -1249,11 +1396,13 @@ function writeBody(cur) {
 
 function typeBody(cur) {
   const isWord = cur.type==='wordType';
-  const hint = isWord ? '발음 또는 뜻을 입력하세요' : '로마자 또는 한국어 발음을 입력하세요';
-  const ph = isWord ? '예) tako  또는  문어' : '예) a  또는  아';
+  const isSentence = cur.type==='sentence';
+  const hint = isSentence ? '로마자 또는 한글 발음으로 읽어보세요' : isWord ? '발음 또는 뜻을 입력하세요' : '로마자 또는 한국어 발음을 입력하세요';
+  const ph = isSentence ? '예) ohayou gozaimasu  또는  오하요우고자이마스' : isWord ? '예) tako  또는  문어' : '예) a  또는  아';
+  const charSz = isSentence ? sentenceCharSize(cur.char) : charSize(cur.char);
   return `
     <div class="quiz-card">
-      <div class="quiz-main-char jp" style="font-size:${charSize(cur.char)}">${cur.char}</div>
+      <div class="quiz-main-char jp" style="font-size:${charSz}">${cur.char}</div>
       <div class="quiz-hint">${hint}</div>
     </div>
     <div style="padding:0 8px;display:flex;flex-direction:column;gap:10px">
@@ -1261,6 +1410,9 @@ function typeBody(cur) {
       <button class="btn btn-primary" onclick="checkType()">확인</button>
     </div>`;
 }
+function sentenceCharSize(s) { const n=[...s].length; return n<=8?'32px':n<=14?'26px':n<=20?'22px':'18px'; }
+function normLoose(s) { return s.toLowerCase().replace(/[,.!?、。！？'’ ]/g,''); }
+
 function checkType() {
   if(quizAnswered) return;
   const input=document.getElementById('type-input'); if(!input) return;
@@ -1268,17 +1420,23 @@ function checkType() {
   quizAnswered=true;
   const cur=state.quiz.questions[state.quiz.current];
   const isWord = cur.type==='wordType';
+  const isSentence = cur.type==='sentence';
   const ko=charToKo(cur.char);
   const meaning=(cur.meaning||'').toLowerCase();
-  const correct = val===cur.romaji.toLowerCase() || val===ko || (isWord && meaning && val===meaning);
+  let correct;
+  if (isSentence) {
+    correct = normLoose(val)===normLoose(cur.romaji) || normLoose(val)===normLoose(ko);
+  } else {
+    correct = val===cur.romaji.toLowerCase() || val===ko || (isWord && meaning && val===meaning);
+  }
   speakNow(cur.char);
   if(correct) state.quiz.score++; else addWrong(cur);
   state.quiz.answers.push(correct);
   input.disabled=true;
   const fb=document.getElementById('fb');
   if(fb){
-    const ans = isWord ? `<b>${cur.romaji}</b> (${ko}) · ${cur.meaning||''}` : `<b>${cur.romaji}</b> (${ko})`;
-    const ok = isWord
+    const ans = (isWord||isSentence) ? `<b>${cur.romaji}</b> (${ko}) · ${cur.meaning||''}` : `<b>${cur.romaji}</b> (${ko})`;
+    const ok = (isWord||isSentence)
       ? `✓ 정답! <span style="font-size:15px;font-weight:normal">${cur.romaji} (${ko}) · ${cur.meaning||''}</span>`
       : `✓ 정답! <span style="font-size:15px;font-weight:normal">${cur.romaji} (${ko})</span>`;
     fb.innerHTML = correct ? ok : `✗ 오답 — 정답: ${ans}`;
@@ -1456,7 +1614,7 @@ function renderResult() {
 // ── 오답노트 ──────────────────────────────────────────────────
 function renderNotes() {
   const all = Object.values(wrongNotes);
-  const tabs = [{id:'all',label:'전체'},{id:'char',label:'낱자'},{id:'word',label:'단어'}];
+  const tabs = [{id:'all',label:'전체'},{id:'char',label:'낱자'},{id:'word',label:'단어'},{id:'sentence',label:'문장'}];
   const tabHtml = tabs.map(t=>`<button class="notes-tab ${notesTab===t.id?'active':''}" onclick="notesTab='${t.id}';renderNotes()">${t.label}</button>`).join('');
   const filtered = notesTab==='all' ? all : all.filter(n=>n.kind===notesTab);
   let listHtml = '';
@@ -1465,9 +1623,9 @@ function renderNotes() {
   } else {
     listHtml = filtered.sort((a,b)=>b.count-a.count).map(n=>`
       <div class="notes-item">
-        <div class="notes-char jp">${n.char}</div>
+        <div class="notes-char jp${n.kind==='sentence'?' notes-char-sentence':''}">${n.char}</div>
         <div class="notes-info">
-          <div class="notes-romaji">${fmtR(n.romaji, n.char)}${n.meaning?' · '+n.meaning:''}</div>
+          <div class="notes-romaji">${n.kind==='sentence'?`${n.romaji}${n.meaning?' · '+n.meaning:''}`:`${fmtR(n.romaji, n.char)}${n.meaning?' · '+n.meaning:''}`}</div>
           <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:3px">
             ${n.count>0?`<span class="notes-badge wrong">오답 ${n.count}회</span>`:''}
             ${n.bookmarked?'<span class="notes-badge book">★ 북마크</span>':''}
@@ -1493,13 +1651,15 @@ function startNotesQuiz() {
   const all = Object.values(wrongNotes);
   const filtered = notesTab==='all' ? all : all.filter(n=>n.kind===notesTab);
   if (!filtered.length) return;
-  const allR = filtered.map(n=>n.romaji);
-  const qs = shuffle(filtered).map(n => ({
+  const allR = [...new Set(filtered.filter(n=>n.kind!=='sentence').map(n=>n.romaji))];
+  const qs = shuffle(filtered).map(n => n.kind==='sentence' ? {
+    type:'sentence', char:n.char, romaji:n.romaji, meaning:n.meaning||'', answer:n.romaji,
+  } : {
     type: n.kind==='word'?'word':'read',
     char: n.char, romaji: n.romaji, meaning: n.meaning||'', answer: n.romaji,
     choices: shuffle([n.romaji, ...shuffle(allR.filter(r=>r!==n.romaji)).slice(0,3)]),
-  }));
-  const label = {all:'전체',char:'낱자',word:'단어'}[notesTab];
+  });
+  const label = {all:'전체',char:'낱자',word:'단어',sentence:'문장'}[notesTab];
   state.quiz = {questions:qs,current:0,score:0,answers:[],skill:'read',isMix:false,sourceId:null,isNotes:true,title:`오답노트 · ${label}`,resultScore:0};
   state.screen='quiz'; render();
 }
@@ -1557,7 +1717,8 @@ function startMixQuiz() {
 
 function retryQuiz() {
   const q=state.quiz;
-  if(q.isMix) startMixQuiz();
+  if(q.skill==='sentence') startSentenceQuiz();
+  else if(q.isMix) startMixQuiz();
   else startLvQuiz(q.sourceId,q.skill);
 }
 
