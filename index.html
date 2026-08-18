@@ -900,7 +900,7 @@ function judgeDraw(correct) {
   const fb=document.getElementById('fb');
   if(fb){fb.textContent=correct?'✓ 정답!':'✗ 오답 — 정답: '+cur.char;fb.className='feedback-area '+(correct?'feedback-correct':'feedback-wrong');}
   const d=document.getElementById('draw-btns'); if(d) d.innerHTML='';
-  const nxt=document.getElementById('nxt'); if(nxt) nxt.style.display='block';
+  setTimeout(nextQ, 500);
 }
 
 function speak(text) {
